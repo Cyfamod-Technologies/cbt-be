@@ -9,6 +9,10 @@ use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\LevelController;
 use App\Http\Controllers\Api\V1\SchoolSettingController;
 use App\Http\Controllers\Api\V1\SemesterController;
+use App\Http\Controllers\Api\V1\StaffController;
+use App\Http\Controllers\Api\V1\StaffCourseAssignmentController;
+use App\Http\Controllers\Api\V1\StaffExamOfficerController;
+use App\Http\Controllers\Api\V1\StaffPermissionController;
 use App\Http\Controllers\Api\V1\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -60,6 +64,22 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::put('courses/{course}', [CourseController::class, 'update'])->name('courses.update');
         Route::patch('courses/{course}/activate', [CourseController::class, 'activate'])->name('courses.activate');
         Route::patch('courses/{course}/deactivate', [CourseController::class, 'deactivate'])->name('courses.deactivate');
+
+        Route::get('staff', [StaffController::class, 'index'])->name('staff.index');
+        Route::post('staff', [StaffController::class, 'store'])->name('staff.store');
+        Route::get('staff/{staff}', [StaffController::class, 'show'])->name('staff.show');
+        Route::put('staff/{staff}', [StaffController::class, 'update'])->name('staff.update');
+        Route::patch('staff/{staff}/activate', [StaffController::class, 'activate'])->name('staff.activate');
+        Route::patch('staff/{staff}/deactivate', [StaffController::class, 'deactivate'])->name('staff.deactivate');
+        Route::get('staff-permissions', [StaffPermissionController::class, 'show'])->name('staff-permissions.show');
+
+        Route::get('staff-course-assignments', [StaffCourseAssignmentController::class, 'index'])->name('staff-course-assignments.index');
+        Route::post('staff-course-assignments', [StaffCourseAssignmentController::class, 'store'])->name('staff-course-assignments.store');
+        Route::delete('staff-course-assignments/{staffCourseAssignment}', [StaffCourseAssignmentController::class, 'destroy'])->name('staff-course-assignments.destroy');
+
+        Route::get('staff-exam-officers', [StaffExamOfficerController::class, 'index'])->name('staff-exam-officers.index');
+        Route::post('staff-exam-officers', [StaffExamOfficerController::class, 'store'])->name('staff-exam-officers.store');
+        Route::delete('staff-exam-officers/{staffExamOfficer}', [StaffExamOfficerController::class, 'destroy'])->name('staff-exam-officers.destroy');
 
         Route::get('users', [UserController::class, 'index'])->name('users.index');
         Route::post('users', [UserController::class, 'store'])->name('users.store');

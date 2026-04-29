@@ -15,7 +15,7 @@ class CourseController extends Controller
     public function index(Request $request): JsonResponse
     {
         return response()->json([
-            'data' => Course::with(['department'])
+            'data' => Course::with(['department', 'level', 'semester'])
                 ->where('school_id', $this->schoolId($request))
                 ->orderBy('code')
                 ->get(),
@@ -31,7 +31,7 @@ class CourseController extends Controller
             ...$validated,
             'school_id' => $user->school_id,
             'status' => $validated['status'] ?? 'active',
-        ])->load(['department']);
+        ])->load(['department', 'level', 'semester']);
 
         return response()->json(['message' => 'Course created successfully.', 'data' => $course], 201);
     }
@@ -40,7 +40,7 @@ class CourseController extends Controller
     {
         abort_unless($course->school_id === $this->schoolId($request), 404);
 
-        return response()->json(['data' => $course->load(['department'])]);
+        return response()->json(['data' => $course->load(['department', 'level', 'semester'])]);
     }
 
     public function update(Request $request, Course $course): JsonResponse
@@ -53,7 +53,7 @@ class CourseController extends Controller
 
         return response()->json([
             'message' => 'Course updated successfully.',
-            'data' => $course->refresh()->load(['department']),
+            'data' => $course->refresh()->load(['department', 'level', 'semester']),
         ]);
     }
 
@@ -119,7 +119,7 @@ class CourseController extends Controller
 
         $course->update(['status' => $status]);
 
-        return response()->json(['message' => "Course {$status} successfully.", 'data' => $course->load(['department'])]);
+        return response()->json(['message' => "Course {$status} successfully.", 'data' => $course->load(['department', 'level', 'semester'])]);
     }
 
     private function schoolId(Request $request): int

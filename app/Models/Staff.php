@@ -6,23 +6,32 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'school_id',
-    'code',
-    'title',
+    'user_id',
+    'staff_id',
+    'full_name',
+    'email',
+    'phone',
     'department_id',
-    'level_id',
-    'semester_id',
     'status',
 ])]
-class Course extends Model
+class Staff extends Model
 {
     use HasFactory;
+
+    protected $table = 'staff';
 
     public function school(): BelongsTo
     {
         return $this->belongsTo(School::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function department(): BelongsTo
@@ -30,13 +39,13 @@ class Course extends Model
         return $this->belongsTo(Department::class);
     }
 
-    public function level(): BelongsTo
+    public function courseAssignments(): HasMany
     {
-        return $this->belongsTo(Level::class);
+        return $this->hasMany(StaffCourseAssignment::class);
     }
 
-    public function semester(): BelongsTo
+    public function examOfficerAssignments(): HasMany
     {
-        return $this->belongsTo(Semester::class);
+        return $this->hasMany(StaffExamOfficer::class);
     }
 }

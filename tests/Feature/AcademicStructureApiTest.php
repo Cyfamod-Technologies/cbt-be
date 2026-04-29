@@ -27,7 +27,10 @@ class AcademicStructureApiTest extends TestCase
             ->assertJsonPath('data.is_current', true)
             ->json('data');
 
-        $semester = $this->postJson('/api/v1/semesters', ['name' => 'First Semester'])
+        $semester = $this->postJson('/api/v1/semesters', [
+            'session_id' => $session['id'],
+            'name' => 'First Semester',
+        ])
             ->assertCreated()
             ->json('data');
 
@@ -90,7 +93,11 @@ class AcademicStructureApiTest extends TestCase
         $admin = $this->adminUser();
         Sanctum::actingAs($admin, ['catalog:manage']);
 
-        $semester = $this->postJson('/api/v1/semesters', ['name' => 'First Semester'])->json('data');
+        $session = $this->postJson('/api/v1/sessions', ['name' => '2025/2026'])->json('data');
+        $semester = $this->postJson('/api/v1/semesters', [
+            'session_id' => $session['id'],
+            'name' => 'First Semester',
+        ])->json('data');
         $department = $this->postJson('/api/v1/departments', ['name' => 'Computer Science'])->json('data');
         $level = $this->postJson('/api/v1/levels', ['name' => 'ND I'])->json('data');
 

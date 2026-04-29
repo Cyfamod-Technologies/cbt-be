@@ -24,6 +24,11 @@ class Department extends Model
         return $this->hasMany(Course::class);
     }
 
+    public function staff(): HasMany
+    {
+        return $this->hasMany(Staff::class);
+    }
+
     public function levels(): BelongsToMany
     {
         return $this->belongsToMany(Level::class)
