@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\LevelController;
 use App\Http\Controllers\Api\V1\SchoolSettingController;
 use App\Http\Controllers\Api\V1\SemesterController;
+use App\Http\Controllers\Api\V1\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('api.v1.')->group(function (): void {
@@ -59,6 +60,13 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::put('courses/{course}', [CourseController::class, 'update'])->name('courses.update');
         Route::patch('courses/{course}/activate', [CourseController::class, 'activate'])->name('courses.activate');
         Route::patch('courses/{course}/deactivate', [CourseController::class, 'deactivate'])->name('courses.deactivate');
+
+        Route::get('users', [UserController::class, 'index'])->name('users.index');
+        Route::post('users', [UserController::class, 'store'])->name('users.store');
+        Route::get('users/{user}', [UserController::class, 'show'])->name('users.show');
+        Route::put('users/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::patch('users/{user}/activate', [UserController::class, 'activate'])->name('users.activate');
+        Route::patch('users/{user}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
 
         Route::get('school-settings', [SchoolSettingController::class, 'show'])->name('school-settings.show');
         Route::patch('school-settings/current-session', [SchoolSettingController::class, 'setCurrentSession'])->name('school-settings.current-session');

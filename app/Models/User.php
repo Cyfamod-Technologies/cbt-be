@@ -12,7 +12,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['school_id', 'name', 'email', 'password', 'role', 'status', 'last_login_at'])]
+#[Fillable(['school_id', 'name', 'matric_no', 'student_id_no', 'department_id', 'level_id', 'phone', 'email', 'password', 'role', 'status', 'last_login_at'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -34,6 +34,16 @@ class User extends Authenticatable
     public function school(): BelongsTo
     {
         return $this->belongsTo(School::class);
+    }
+
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function level(): BelongsTo
+    {
+        return $this->belongsTo(Level::class);
     }
 
     /**
@@ -76,6 +86,11 @@ class User extends Authenticatable
     }
 
     public function canManageCatalog(): bool
+    {
+        return $this->isAdmin();
+    }
+
+    public function canManageUsers(): bool
     {
         return $this->isAdmin();
     }
