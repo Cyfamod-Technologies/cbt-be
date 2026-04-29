@@ -1,0 +1,119 @@
+<?php
+
+namespace App\Http\Controllers\Api\V1;
+
+use App\Http\Controllers\Controller;
+use App\Models\SchoolSetting;
+use App\Models\Semester;
+use App\Models\User;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+
+class SemesterController extends Controller
+{
+    public function index(Request $request): JsonResponse
+    {
+        return response()->json([
+            'data' => Semester::where('school_id', $this->schoolId($request))
+                ->orderBy('name')
+                ->get(),
+        ]);
+    }
+
+    public function store(Request $request): JsonResponse
+    {
+        $user = $this->requireCatalogManager($request);
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255', Rule::unique('semesters')->where('school_id', $user->school_id)],
+            'status' => ['sometimes', Rule::in(['active', 'inactive'])],
+        ]);
+
+        $semester = Semester::create([
+            ...$validated,
+            'school_id' => $user->school_id,
+            'status' => $validated['status'] ?? 'active',
+        ]);
+
+        return response()->json(['message' => 'Semester created successfully.', 'data' => $semester], 201);
+    }
+
+    public function show(Request $request, Semester $semester): JsonResponse
+    {
+        abort_unless($semester->school_id === $this->schoolId($request), 404);
+
+        return response()->json(['data' => $semester]);
+    }
+
+    public function update(Request $request, Semester $semester): JsonResponse
+    {
+        $user = $this->requireCatalogManager($request);
+        abort_unless($semester->school_id === $user->school_id, 404);
+
+        $validated = $request->validate([
+            'name' => [
+                'sometimes',
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('semesters')->where('school_id', $user->school_id)->ignore($semester->id),
+            ],
+            'status' => ['sometimes', Rule::in(['active', 'inactive'])],
+        ]);
+
+        $semester->update($validated);
+
+        return response()->json(['message' => 'Semester updated successfully.', 'data' => $semester->refresh()]);
+    }
+
+    public function activate(Request $request, Semester $semester): JsonResponse
+    {
+        return $this->setStatus($request, $semester, 'active');
+    }
+
+    public function deactivate(Request $request, Semester $semester): JsonResponse
+    {
+        return $this->setStatus($request, $semester, 'inactive');
+    }
+
+    public function setCurrent(Request $request, Semester $semester): JsonResponse
+    {
+        $user = $this->requireCatalogManager($request);
+        abort_unless($semester->school_id === $user->school_id, 404);
+
+        $semester->update(['status' => 'active']);
+        SchoolSetting::updateOrCreate(
+            ['school_id' => $user->school_id],
+            ['current_semester_id' => $semester->id],
+        );
+
+        return response()->json(['message' => 'Current semester updated successfully.', 'data' => $semester->refresh()]);
+    }
+
+    private function setStatus(Request $request, Semester $semester, string $status): JsonResponse
+    {
+        $user = $this->requireCatalogManager($request);
+        abort_unless($semester->school_id === $user->school_id, 404);
+
+        $semester->update(['status' => $status]);
+
+        return response()->json(['message' => "Semester {$status} successfully.", 'data' => $semester]);
+    }
+
+    private function schoolId(Request $request): int
+    {
+        $user = $request->user();
+        abort_unless($user instanceof User && $user->school_id, 401);
+
+        return $user->school_id;
+    }
+
+    private function requireCatalogManager(Request $request): User
+    {
+        $user = $request->user();
+        abort_unless($user instanceof User && $user->canManageCatalog(), 403);
+
+        return $user;
+    }
+}
