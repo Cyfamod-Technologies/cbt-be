@@ -15,7 +15,8 @@ class SemesterController extends Controller
     public function index(Request $request): JsonResponse
     {
         return response()->json([
-            'data' => Semester::where('school_id', $this->schoolId($request))
+            'data' => Semester::with('session')
+                ->where('school_id', $this->schoolId($request))
                 ->orderBy('name')
                 ->get(),
         ]);
@@ -26,7 +27,15 @@ class SemesterController extends Controller
         $user = $this->requireCatalogManager($request);
 
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', Rule::unique('semesters')->where('school_id', $user->school_id)],
+            'session_id' => ['required', 'integer', Rule::exists('sessions', 'id')->where('school_id', $user->school_id)],
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('semesters')
+                    ->where('school_id', $user->school_id)
+                    ->where('session_id', $request->input('session_id')),
+            ],
             'status' => ['sometimes', Rule::in(['active', 'inactive'])],
         ]);
 
@@ -34,7 +43,7 @@ class SemesterController extends Controller
             ...$validated,
             'school_id' => $user->school_id,
             'status' => $validated['status'] ?? 'active',
-        ]);
+        ])->load('session');
 
         return response()->json(['message' => 'Semester created successfully.', 'data' => $semester], 201);
     }
@@ -52,19 +61,28 @@ class SemesterController extends Controller
         abort_unless($semester->school_id === $user->school_id, 404);
 
         $validated = $request->validate([
+            'session_id' => [
+                'sometimes',
+                'required',
+                'integer',
+                Rule::exists('sessions', 'id')->where('school_id', $user->school_id),
+            ],
             'name' => [
                 'sometimes',
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('semesters')->where('school_id', $user->school_id)->ignore($semester->id),
+                Rule::unique('semesters')
+                    ->where('school_id', $user->school_id)
+                    ->where('session_id', $request->input('session_id', $semester->session_id))
+                    ->ignore($semester->id),
             ],
             'status' => ['sometimes', Rule::in(['active', 'inactive'])],
         ]);
 
         $semester->update($validated);
 
-        return response()->json(['message' => 'Semester updated successfully.', 'data' => $semester->refresh()]);
+        return response()->json(['message' => 'Semester updated successfully.', 'data' => $semester->refresh()->load('session')]);
     }
 
     public function activate(Request $request, Semester $semester): JsonResponse
@@ -98,7 +116,7 @@ class SemesterController extends Controller
 
         $semester->update(['status' => $status]);
 
-        return response()->json(['message' => "Semester {$status} successfully.", 'data' => $semester]);
+        return response()->json(['message' => "Semester {$status} successfully.", 'data' => $semester->load('session')]);
     }
 
     private function schoolId(Request $request): int

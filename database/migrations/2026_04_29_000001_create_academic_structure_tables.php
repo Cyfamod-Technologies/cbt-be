@@ -28,11 +28,13 @@ return new class extends Migration
         Schema::create('semesters', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('school_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('session_id')->constrained('sessions')->cascadeOnDelete();
             $table->string('name');
             $table->string('status', 30)->default('active');
             $table->timestamps();
 
-            $table->unique(['school_id', 'name']);
+            $table->unique(['school_id', 'session_id', 'name']);
+            $table->index(['school_id', 'session_id']);
             $table->index(['school_id', 'status']);
         });
 

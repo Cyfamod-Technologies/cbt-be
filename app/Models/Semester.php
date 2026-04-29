@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-#[Fillable(['school_id', 'name', 'status'])]
+#[Fillable(['school_id', 'session_id', 'name', 'status'])]
 class Semester extends Model
 {
     use HasFactory;
@@ -17,6 +17,11 @@ class Semester extends Model
     public function school(): BelongsTo
     {
         return $this->belongsTo(School::class);
+    }
+
+    public function session(): BelongsTo
+    {
+        return $this->belongsTo(AcademicSession::class, 'session_id');
     }
 
     public function courses(): HasMany
