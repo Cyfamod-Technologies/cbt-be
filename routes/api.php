@@ -65,6 +65,7 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::post('users', [UserController::class, 'store'])->name('users.store');
         Route::get('users/{user}', [UserController::class, 'show'])->name('users.show');
         Route::put('users/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
         Route::patch('users/{user}/activate', [UserController::class, 'activate'])->name('users.activate');
         Route::patch('users/{user}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
 
