@@ -43,6 +43,8 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::put('departments/{department}', [DepartmentController::class, 'update'])->name('departments.update');
         Route::patch('departments/{department}/activate', [DepartmentController::class, 'activate'])->name('departments.activate');
         Route::patch('departments/{department}/deactivate', [DepartmentController::class, 'deactivate'])->name('departments.deactivate');
+        Route::post('departments/{department}/levels', [DepartmentController::class, 'storeLevel'])->name('departments.levels.store');
+        Route::delete('departments/{department}/levels/{level}', [DepartmentController::class, 'destroyLevel'])->name('departments.levels.destroy');
 
         Route::get('levels', [LevelController::class, 'index'])->name('levels.index');
         Route::post('levels', [LevelController::class, 'store'])->name('levels.store');

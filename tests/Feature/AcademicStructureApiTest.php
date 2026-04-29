@@ -108,6 +108,33 @@ class AcademicStructureApiTest extends TestCase
             ->assertJsonValidationErrors('code');
     }
 
+    public function test_admin_can_add_and_remove_levels_on_department(): void
+    {
+        $admin = $this->adminUser();
+        Sanctum::actingAs($admin, ['catalog:manage']);
+
+        $department = $this->postJson('/api/v1/departments', [
+            'name' => 'Computer Science',
+            'code' => 'CSC',
+        ])
+            ->assertCreated()
+            ->json('data');
+
+        $this->postJson("/api/v1/departments/{$department['id']}/levels", [
+            'name' => 'ND I',
+        ])
+            ->assertCreated()
+            ->assertJsonPath('data.levels.0.name', 'ND I');
+
+        $levelId = $this->getJson('/api/v1/departments')
+            ->assertOk()
+            ->json('data.0.levels.0.id');
+
+        $this->deleteJson("/api/v1/departments/{$department['id']}/levels/{$levelId}")
+            ->assertOk()
+            ->assertJsonPath('data.levels', []);
+    }
+
     public function test_non_admin_cannot_create_academic_structure(): void
     {
         $staff = $this->staffUser();
