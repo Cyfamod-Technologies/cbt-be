@@ -75,10 +75,12 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
 
         Route::get('staff-course-assignments', [StaffCourseAssignmentController::class, 'index'])->name('staff-course-assignments.index');
         Route::post('staff-course-assignments', [StaffCourseAssignmentController::class, 'store'])->name('staff-course-assignments.store');
+        Route::put('staff-course-assignments/{staffCourseAssignment}', [StaffCourseAssignmentController::class, 'update'])->name('staff-course-assignments.update');
         Route::delete('staff-course-assignments/{staffCourseAssignment}', [StaffCourseAssignmentController::class, 'destroy'])->name('staff-course-assignments.destroy');
 
         Route::get('staff-exam-officers', [StaffExamOfficerController::class, 'index'])->name('staff-exam-officers.index');
         Route::post('staff-exam-officers', [StaffExamOfficerController::class, 'store'])->name('staff-exam-officers.store');
+        Route::put('staff-exam-officers/{staffExamOfficer}', [StaffExamOfficerController::class, 'update'])->name('staff-exam-officers.update');
         Route::delete('staff-exam-officers/{staffExamOfficer}', [StaffExamOfficerController::class, 'destroy'])->name('staff-exam-officers.destroy');
 
         Route::get('users', [UserController::class, 'index'])->name('users.index');

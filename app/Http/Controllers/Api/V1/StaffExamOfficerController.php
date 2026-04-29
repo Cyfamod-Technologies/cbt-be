@@ -65,6 +65,47 @@ class StaffExamOfficerController extends Controller
         ], 201);
     }
 
+    public function update(Request $request, StaffExamOfficer $staffExamOfficer): JsonResponse
+    {
+        $actor = $this->requireUserManager($request);
+        abort_unless($staffExamOfficer->school_id === $actor->school_id, 404);
+
+        $validated = $request->validate($this->rules($actor));
+        $this->validateScope($validated);
+
+        $duplicate = StaffExamOfficer::where('school_id', $actor->school_id)
+            ->where('staff_id', $validated['staff_id'])
+            ->where('session_id', $validated['session_id'])
+            ->where('semester_id', $validated['semester_id'])
+            ->where('department_id', $validated['department_id'])
+            ->where('scope', $validated['scope'])
+            ->when(
+                $validated['scope'] === StaffExamOfficer::SCOPE_DEPARTMENT_LEVEL,
+                fn ($query) => $query->where('level_id', $validated['level_id']),
+                fn ($query) => $query->whereNull('level_id'),
+            )
+            ->whereKeyNot($staffExamOfficer->id)
+            ->exists();
+
+        if ($duplicate) {
+            throw ValidationException::withMessages([
+                'staff_id' => ['This exam officer assignment already exists.'],
+            ]);
+        }
+
+        $staffExamOfficer->update([
+            ...$validated,
+            'level_id' => $validated['scope'] === StaffExamOfficer::SCOPE_DEPARTMENT
+                ? null
+                : $validated['level_id'],
+        ]);
+
+        return response()->json([
+            'message' => 'Exam officer assignment updated successfully.',
+            'data' => $staffExamOfficer->refresh()->load(['staff', 'session', 'semester', 'department', 'level']),
+        ]);
+    }
+
     public function destroy(Request $request, StaffExamOfficer $staffExamOfficer): JsonResponse
     {
         $actor = $this->requireUserManager($request);

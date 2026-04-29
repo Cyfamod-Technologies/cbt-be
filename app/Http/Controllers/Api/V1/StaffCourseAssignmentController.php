@@ -68,6 +68,38 @@ class StaffCourseAssignmentController extends Controller
         ], 201);
     }
 
+    public function update(Request $request, StaffCourseAssignment $staffCourseAssignment): JsonResponse
+    {
+        $actor = $this->requireUserManager($request);
+        abort_unless($staffCourseAssignment->school_id === $actor->school_id, 404);
+
+        $validated = $request->validate($this->rules($actor));
+        $this->validateCourseContext($actor->school_id, $validated);
+
+        $duplicate = StaffCourseAssignment::where('school_id', $actor->school_id)
+            ->where('staff_id', $validated['staff_id'])
+            ->where('session_id', $validated['session_id'])
+            ->where('semester_id', $validated['semester_id'])
+            ->where('department_id', $validated['department_id'])
+            ->where('level_id', $validated['level_id'])
+            ->where('course_id', $validated['course_id'])
+            ->whereKeyNot($staffCourseAssignment->id)
+            ->exists();
+
+        if ($duplicate) {
+            throw ValidationException::withMessages([
+                'course_id' => ['This staff course assignment already exists.'],
+            ]);
+        }
+
+        $staffCourseAssignment->update($validated);
+
+        return response()->json([
+            'message' => 'Staff course assignment updated successfully.',
+            'data' => $staffCourseAssignment->refresh()->load(['staff', 'session', 'semester', 'department', 'level', 'course']),
+        ]);
+    }
+
     public function destroy(Request $request, StaffCourseAssignment $staffCourseAssignment): JsonResponse
     {
         $actor = $this->requireUserManager($request);

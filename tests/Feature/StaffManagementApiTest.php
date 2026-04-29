@@ -85,6 +85,26 @@ class StaffManagementApiTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors('course_id');
 
+        $secondCourse = Course::create([
+            'school_id' => $admin->school_id,
+            'department_id' => $department->id,
+            'level_id' => $level->id,
+            'semester_id' => $semester->id,
+            'code' => 'COM112',
+            'title' => 'Computer Applications',
+        ]);
+
+        $this->putJson("/api/v1/staff-course-assignments/{$assignment['id']}", [
+            'staff_id' => $staff->id,
+            'session_id' => $session->id,
+            'semester_id' => $semester->id,
+            'department_id' => $department->id,
+            'level_id' => $level->id,
+            'course_id' => $secondCourse->id,
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.course.code', 'COM112');
+
         Sanctum::actingAs($staff->user, ['questions:manage']);
         $this->getJson('/api/v1/staff-permissions')
             ->assertOk()
@@ -119,6 +139,19 @@ class StaffManagementApiTest extends TestCase
             ->assertCreated()
             ->assertJsonPath('data.scope', StaffExamOfficer::SCOPE_DEPARTMENT_LEVEL)
             ->assertJsonPath('data.level.name', 'ND I');
+
+        $assignmentId = StaffExamOfficer::firstOrFail()->id;
+
+        $this->putJson("/api/v1/staff-exam-officers/{$assignmentId}", [
+            'staff_id' => $staff->id,
+            'session_id' => $session->id,
+            'semester_id' => $semester->id,
+            'department_id' => $department->id,
+            'scope' => StaffExamOfficer::SCOPE_DEPARTMENT,
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.scope', StaffExamOfficer::SCOPE_DEPARTMENT)
+            ->assertJsonPath('data.level_id', null);
     }
 
     /**
