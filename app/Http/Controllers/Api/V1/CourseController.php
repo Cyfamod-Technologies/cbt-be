@@ -15,7 +15,7 @@ class CourseController extends Controller
     public function index(Request $request): JsonResponse
     {
         return response()->json([
-            'data' => Course::with(['department', 'level', 'semester'])
+            'data' => Course::with(['department'])
                 ->where('school_id', $this->schoolId($request))
                 ->orderBy('code')
                 ->get(),
@@ -31,7 +31,7 @@ class CourseController extends Controller
             ...$validated,
             'school_id' => $user->school_id,
             'status' => $validated['status'] ?? 'active',
-        ])->load(['department', 'level', 'semester']);
+        ])->load(['department']);
 
         return response()->json(['message' => 'Course created successfully.', 'data' => $course], 201);
     }
@@ -40,7 +40,7 @@ class CourseController extends Controller
     {
         abort_unless($course->school_id === $this->schoolId($request), 404);
 
-        return response()->json(['data' => $course->load(['department', 'level', 'semester'])]);
+        return response()->json(['data' => $course->load(['department'])]);
     }
 
     public function update(Request $request, Course $course): JsonResponse
@@ -53,7 +53,7 @@ class CourseController extends Controller
 
         return response()->json([
             'message' => 'Course updated successfully.',
-            'data' => $course->refresh()->load(['department', 'level', 'semester']),
+            'data' => $course->refresh()->load(['department']),
         ]);
     }
 
@@ -74,9 +74,6 @@ class CourseController extends Controller
     {
         $schoolId = $user->school_id;
         $required = $course ? 'sometimes' : 'required';
-        $departmentId = $request->input('department_id', $course?->department_id);
-        $levelId = $request->input('level_id', $course?->level_id);
-        $semesterId = $request->input('semester_id', $course?->semester_id);
 
         $validated = $request->validate([
             'code' => [
@@ -90,37 +87,25 @@ class CourseController extends Controller
                 'integer',
                 Rule::exists('departments', 'id')->where('school_id', $schoolId),
             ],
-            'level_id' => [
-                $required,
-                'integer',
-                Rule::exists('levels', 'id')->where('school_id', $schoolId),
-            ],
-            'semester_id' => [
-                $required,
-                'integer',
-                Rule::exists('semesters', 'id')->where('school_id', $schoolId),
-            ],
+            'level_id' => ['sometimes', 'nullable', 'integer', Rule::exists('levels', 'id')->where('school_id', $schoolId)],
+            'semester_id' => ['sometimes', 'nullable', 'integer', Rule::exists('semesters', 'id')->where('school_id', $schoolId)],
             'status' => ['sometimes', Rule::in(['active', 'inactive'])],
         ]);
 
         $candidate = [
             'code' => $validated['code'] ?? $course?->code,
             'department_id' => $validated['department_id'] ?? $course?->department_id,
-            'level_id' => $validated['level_id'] ?? $course?->level_id,
-            'semester_id' => $validated['semester_id'] ?? $course?->semester_id,
         ];
 
         $duplicate = Course::where('school_id', $schoolId)
             ->where('code', $candidate['code'])
             ->where('department_id', $candidate['department_id'])
-            ->where('level_id', $candidate['level_id'])
-            ->where('semester_id', $candidate['semester_id'])
             ->when($course, fn ($query) => $query->whereKeyNot($course->id))
             ->exists();
 
         if ($duplicate) {
             throw ValidationException::withMessages([
-                'code' => ['This course code already exists for the selected department, level, and semester.'],
+                'code' => ['This course code already exists for the selected department.'],
             ]);
         }
 
@@ -134,7 +119,7 @@ class CourseController extends Controller
 
         $course->update(['status' => $status]);
 
-        return response()->json(['message' => "Course {$status} successfully.", 'data' => $course->load(['department', 'level', 'semester'])]);
+        return response()->json(['message' => "Course {$status} successfully.", 'data' => $course->load(['department'])]);
     }
 
     private function schoolId(Request $request): int

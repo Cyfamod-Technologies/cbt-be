@@ -29,14 +29,4 @@ class Course extends Model
     {
         return $this->belongsTo(Department::class);
     }
-
-    public function level(): BelongsTo
-    {
-        return $this->belongsTo(Level::class);
-    }
-
-    public function semester(): BelongsTo
-    {
-        return $this->belongsTo(Semester::class);
-    }
 }
