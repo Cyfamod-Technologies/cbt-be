@@ -159,6 +159,7 @@ class AuthController extends Controller
                 'manage_catalog' => $user->canManageCatalog(),
                 'manage_users' => $user->canManageUsers(),
                 'manage_questions' => $user->canManageQuestions(),
+                'manage_assessments' => $user->canManageAssessments(),
                 'take_exams' => $user->canTakeExams(),
             ],
         ];

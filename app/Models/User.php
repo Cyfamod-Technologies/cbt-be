@@ -111,13 +111,32 @@ class User extends Authenticatable
         return $this->role === self::ROLE_STUDENT;
     }
 
+    public function canManageAssessments(): bool
+    {
+        return $this->isStaffLike();
+    }
+
+    public function canManageExams(): bool
+    {
+        return $this->canManageAssessments();
+    }
+
     /**
      * @return list<string>
      */
     public function tokenAbilities(): array
     {
         if ($this->isSuperAdmin()) {
-            return ['*'];
+            return [
+                'profile:read',
+                'schools:manage',
+                'catalog:manage',
+                'users:manage',
+                'questions:manage',
+                'assessments:manage',
+                'exams:manage',
+                'results:manage',
+            ];
         }
 
         $abilities = ['profile:read'];
@@ -128,6 +147,7 @@ class User extends Authenticatable
                 'catalog:manage',
                 'users:manage',
                 'questions:manage',
+                'assessments:manage',
                 'exams:manage',
                 'results:manage',
             ];
@@ -137,6 +157,7 @@ class User extends Authenticatable
             return [
                 ...$abilities,
                 'questions:manage',
+                'assessments:manage',
             ];
         }
 

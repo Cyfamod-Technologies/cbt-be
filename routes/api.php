@@ -2,6 +2,9 @@
 
 use App\Http\Controllers\Api\V1\AcademicSessionController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\AssessmentAttemptController;
+use App\Http\Controllers\Api\V1\AssessmentController;
+use App\Http\Controllers\Api\V1\AssessmentQuestionController;
 use App\Http\Controllers\Api\V1\CourseController;
 use App\Http\Controllers\Api\V1\CurrentUserController;
 use App\Http\Controllers\Api\V1\DepartmentController;
@@ -64,6 +67,24 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::put('courses/{course}', [CourseController::class, 'update'])->name('courses.update');
         Route::patch('courses/{course}/activate', [CourseController::class, 'activate'])->name('courses.activate');
         Route::patch('courses/{course}/deactivate', [CourseController::class, 'deactivate'])->name('courses.deactivate');
+
+        Route::get('assessments/available', [AssessmentController::class, 'available'])->name('assessments.available');
+        Route::get('assessments', [AssessmentController::class, 'index'])->name('assessments.index');
+        Route::post('assessments', [AssessmentController::class, 'store'])->name('assessments.store');
+        Route::get('assessments/{assessment}', [AssessmentController::class, 'show'])->name('assessments.show');
+        Route::put('assessments/{assessment}', [AssessmentController::class, 'update'])->name('assessments.update');
+        Route::delete('assessments/{assessment}', [AssessmentController::class, 'destroy'])->name('assessments.destroy');
+        Route::patch('assessments/{assessment}/publish', [AssessmentController::class, 'publish'])->name('assessments.publish');
+        Route::patch('assessments/{assessment}/close', [AssessmentController::class, 'close'])->name('assessments.close');
+        Route::get('assessments/{assessment}/questions', [AssessmentQuestionController::class, 'index'])->name('assessments.questions.index');
+        Route::post('assessments/{assessment}/questions', [AssessmentQuestionController::class, 'store'])->name('assessments.questions.store');
+        Route::post('assessments/{assessment}/questions/import', [AssessmentQuestionController::class, 'import'])->name('assessments.questions.import');
+        Route::put('assessment-questions/{assessmentQuestion}', [AssessmentQuestionController::class, 'update'])->name('assessment-questions.update');
+        Route::delete('assessment-questions/{assessmentQuestion}', [AssessmentQuestionController::class, 'destroy'])->name('assessment-questions.destroy');
+        Route::get('assessment-attempts', [AssessmentAttemptController::class, 'index'])->name('assessment-attempts.index');
+        Route::post('assessments/{assessment}/attempts', [AssessmentAttemptController::class, 'store'])->name('assessments.attempts.store');
+        Route::get('assessment-attempts/{assessmentAttempt}', [AssessmentAttemptController::class, 'show'])->name('assessment-attempts.show');
+        Route::post('assessment-attempts/{assessmentAttempt}/submit', [AssessmentAttemptController::class, 'submit'])->name('assessment-attempts.submit');
 
         Route::get('staff', [StaffController::class, 'index'])->name('staff.index');
         Route::post('staff', [StaffController::class, 'store'])->name('staff.store');
