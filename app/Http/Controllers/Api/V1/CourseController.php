@@ -83,7 +83,8 @@ class CourseController extends Controller
             ],
             'title' => [$required, 'string', 'max:255'],
             'department_id' => [
-                $required,
+                'sometimes',
+                'nullable',
                 'integer',
                 Rule::exists('departments', 'id')->where('school_id', $schoolId),
             ],
@@ -97,11 +98,13 @@ class CourseController extends Controller
             'department_id' => $validated['department_id'] ?? $course?->department_id,
         ];
 
-        $duplicate = Course::where('school_id', $schoolId)
+        $deptId = $candidate['department_id'];
+        $duplicateQuery = Course::where('school_id', $schoolId)
             ->where('code', $candidate['code'])
-            ->where('department_id', $candidate['department_id'])
-            ->when($course, fn ($query) => $query->whereKeyNot($course->id))
-            ->exists();
+            ->when($course, fn ($query) => $query->whereKeyNot($course->id));
+        $duplicate = $deptId
+            ? (clone $duplicateQuery)->where('department_id', $deptId)->exists()
+            : (clone $duplicateQuery)->whereNull('department_id')->exists();
 
         if ($duplicate) {
             throw ValidationException::withMessages([

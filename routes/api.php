@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\V1\SemesterController;
 use App\Http\Controllers\Api\V1\StaffController;
 use App\Http\Controllers\Api\V1\StaffCourseAssignmentController;
 use App\Http\Controllers\Api\V1\StaffExamOfficerController;
+use App\Http\Controllers\Api\V1\StudentCourseEnrollmentController;
 use App\Http\Controllers\Api\V1\StaffPermissionController;
 use App\Http\Controllers\Api\V1\UserController;
 use Illuminate\Support\Facades\Route;
@@ -24,6 +25,7 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
 
     Route::post('auth/register-school', [AuthController::class, 'registerSchool'])->name('auth.register-school');
     Route::post('auth/login', [AuthController::class, 'login'])->name('auth.login');
+    Route::post('auth/student-access', [AuthController::class, 'studentAccess'])->name('auth.student-access');
 
     Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('me', CurrentUserController::class)->name('me');
@@ -111,6 +113,9 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
         Route::patch('users/{user}/activate', [UserController::class, 'activate'])->name('users.activate');
         Route::patch('users/{user}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
+        Route::get('users/{user}/course-enrollments', [StudentCourseEnrollmentController::class, 'index'])->name('users.course-enrollments.index');
+        Route::post('users/{user}/course-enrollments', [StudentCourseEnrollmentController::class, 'store'])->name('users.course-enrollments.store');
+        Route::delete('users/{user}/course-enrollments/{enrollment}', [StudentCourseEnrollmentController::class, 'destroy'])->name('users.course-enrollments.destroy');
 
         Route::get('school-settings', [SchoolSettingController::class, 'show'])->name('school-settings.show');
         Route::patch('school-settings/current-session', [SchoolSettingController::class, 'setCurrentSession'])->name('school-settings.current-session');

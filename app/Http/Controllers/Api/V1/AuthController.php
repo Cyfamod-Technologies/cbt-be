@@ -126,6 +126,51 @@ class AuthController extends Controller
         ]);
     }
 
+    public function studentAccess(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'school_code' => ['required', 'string'],
+            'matric_no'   => ['required', 'string'],
+            'name'        => ['required', 'string'],
+        ]);
+
+        $school = School::where('code', strtoupper(trim($validated['school_code'])))
+            ->where('status', 'active')
+            ->first();
+
+        abort_unless($school, 422, 'School not found or inactive.');
+
+        $student = User::where('school_id', $school->id)
+            ->where('matric_no', trim($validated['matric_no']))
+            ->where('role', User::ROLE_STUDENT)
+            ->where('status', User::STATUS_ACTIVE)
+            ->with(['department', 'level'])
+            ->first();
+
+        abort_unless($student, 422, 'Student not found. Check your matric number.');
+
+        $inputName       = strtolower(trim($validated['name']));
+        $storedFirstWord = strtolower(strtok(trim($student->name), ' '));
+        abort_unless($inputName === $storedFirstWord, 422, 'Name does not match our records.');
+
+        $student->forceFill(['last_login_at' => now()])->save();
+
+        $token = $student->createToken('student-access', $student->tokenAbilities())->plainTextToken;
+
+        return response()->json([
+            'token' => $token,
+            'user'  => [
+                'id'            => $student->id,
+                'name'          => $student->name,
+                'matric_no'     => $student->matric_no,
+                'department_id' => $student->department_id,
+                'level_id'      => $student->level_id,
+                'department'    => $student->department ? ['id' => $student->department->id, 'name' => $student->department->name] : null,
+                'level'         => $student->level       ? ['id' => $student->level->id,       'name' => $student->level->name]       : null,
+            ],
+        ]);
+    }
+
     public function logout(Request $request): JsonResponse
     {
         $token = $request->user()?->currentAccessToken();

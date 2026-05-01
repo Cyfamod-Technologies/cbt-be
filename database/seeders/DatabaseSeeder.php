@@ -139,7 +139,7 @@ class DatabaseSeeder extends Seeder
                     'staff_id' => 'STF-001',
                     'full_name' => 'Question Staff',
                     'phone' => '08030000000',
-                    'department_id' => null,
+                    'department_id' => $department->id,
                     'status' => 'active',
                 ],
             );

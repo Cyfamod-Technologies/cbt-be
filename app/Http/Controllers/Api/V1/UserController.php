@@ -15,14 +15,33 @@ class UserController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $this->requireUserManager($request);
+        $authUser = $request->user();
+        abort_unless($authUser instanceof User && $authUser->school_id, 401);
+
+        // Staff can only view students from their own assigned department
+        if ($authUser->role === User::ROLE_STAFF) {
+            $staffProfile = $authUser->staff;
+            abort_unless($staffProfile !== null && $staffProfile->department_id !== null, 403);
+
+            $students = User::query()
+                ->where('school_id', $authUser->school_id)
+                ->where('role', User::ROLE_STUDENT)
+                ->where('department_id', $staffProfile->department_id)
+                ->with(['department', 'level'])
+                ->orderBy('name')
+                ->get();
+
+            return response()->json(['data' => $students]);
+        }
+
+        abort_unless($authUser->canManageUsers(), 403);
 
         $validated = $request->validate([
             'role' => ['nullable', Rule::in([User::ROLE_ADMIN, User::ROLE_STAFF, User::ROLE_STUDENT])],
         ]);
 
         $users = User::query()
-            ->where('school_id', $this->schoolId($request))
+            ->where('school_id', $authUser->school_id)
             ->with(['department', 'level'])
             ->when($validated['role'] ?? null, fn ($query, $role) => $query->where('role', $role))
             ->orderBy('name')
