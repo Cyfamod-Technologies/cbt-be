@@ -142,6 +142,28 @@ class AcademicSessionController extends Controller
         return response()->json(['message' => "Session {$status} successfully.", 'data' => $session]);
     }
 
+    public function destroy(Request $request, AcademicSession $session): JsonResponse
+    {
+        $user = $this->requireCatalogManager($request);
+        abort_unless($session->school_id === $user->school_id, 404);
+
+        $links = [
+            ['table' => 'semesters', 'column' => 'session_id', 'label' => 'semesters'],
+            ['table' => 'assessments', 'column' => 'session_id', 'label' => 'assessments'],
+            ['table' => 'staff_course_assignments', 'column' => 'session_id', 'label' => 'lecturer assignments'],
+            ['table' => 'staff_exam_officers', 'column' => 'session_id', 'label' => 'exam officer assignments'],
+        ];
+
+        foreach ($links as $link) {
+            if (DB::table($link['table'])->where($link['column'], $session->id)->exists()) {
+                abort(422, "Cannot delete: this session is linked to existing {$link['label']}.");
+            }
+        }
+
+        $session->delete();
+        return response()->json(null, 204);
+    }
+
     private function schoolId(Request $request): int
     {
         $user = $request->user();

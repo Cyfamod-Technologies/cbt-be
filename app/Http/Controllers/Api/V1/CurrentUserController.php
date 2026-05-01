@@ -19,6 +19,10 @@ class CurrentUserController extends Controller
 
         $user->loadMissing('school');
 
+        if ($user->role === User::ROLE_STUDENT) {
+            $user->loadMissing(['department', 'level']);
+        }
+
         return response()->json([
             'user' => [
                 'id' => $user->id,
@@ -27,6 +31,15 @@ class CurrentUserController extends Controller
                 'email' => $user->email,
                 'role' => $user->role,
                 'status' => $user->status,
+                'matric_no' => $user->matric_no ?? null,
+                'department_id' => $user->department_id ?? null,
+                'level_id' => $user->level_id ?? null,
+                'department' => isset($user->department) && $user->department
+                    ? ['id' => $user->department->id, 'name' => $user->department->name]
+                    : null,
+                'level' => isset($user->level) && $user->level
+                    ? ['id' => $user->level->id, 'name' => $user->level->name]
+                    : null,
                 'school' => $user->school ? [
                     'id' => $user->school->id,
                     'name' => $user->school->name,

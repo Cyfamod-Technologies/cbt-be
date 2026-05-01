@@ -8,6 +8,7 @@ use App\Models\Semester;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class SemesterController extends Controller
@@ -117,6 +118,27 @@ class SemesterController extends Controller
         $semester->update(['status' => $status]);
 
         return response()->json(['message' => "Semester {$status} successfully.", 'data' => $semester->load('session')]);
+    }
+
+    public function destroy(Request $request, Semester $semester): JsonResponse
+    {
+        $user = $this->requireCatalogManager($request);
+        abort_unless($semester->school_id === $user->school_id, 404);
+
+        $links = [
+            ['table' => 'assessments', 'column' => 'semester_id', 'label' => 'assessments'],
+            ['table' => 'staff_course_assignments', 'column' => 'semester_id', 'label' => 'lecturer assignments'],
+            ['table' => 'staff_exam_officers', 'column' => 'semester_id', 'label' => 'exam officer assignments'],
+        ];
+
+        foreach ($links as $link) {
+            if (DB::table($link['table'])->where($link['column'], $semester->id)->exists()) {
+                abort(422, "Cannot delete: this semester is linked to existing {$link['label']}.");
+            }
+        }
+
+        $semester->delete();
+        return response()->json(null, 204);
     }
 
     private function schoolId(Request $request): int

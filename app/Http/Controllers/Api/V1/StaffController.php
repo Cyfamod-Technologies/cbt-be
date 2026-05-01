@@ -117,6 +117,31 @@ class StaffController extends Controller
         ]);
     }
 
+    public function destroy(Request $request, Staff $staff): JsonResponse
+    {
+        $actor = $this->requireUserManager($request);
+        abort_unless($staff->school_id === $actor->school_id, 404);
+
+        $links = [
+            ['table' => 'staff_course_assignments', 'column' => 'staff_id', 'label' => 'course assignments'],
+            ['table' => 'staff_exam_officers', 'column' => 'staff_id', 'label' => 'exam officer assignments'],
+        ];
+
+        foreach ($links as $link) {
+            if (DB::table($link['table'])->where($link['column'], $staff->id)->exists()) {
+                abort(422, "Cannot delete: this staff is linked to existing {$link['label']}.");
+            }
+        }
+
+        DB::transaction(function () use ($staff): void {
+            $userId = $staff->user_id;
+            $staff->delete();
+            User::where('id', $userId)->delete();
+        });
+
+        return response()->json(null, 204);
+    }
+
     public function activate(Request $request, Staff $staff): JsonResponse
     {
         return $this->setStatus($request, $staff, User::STATUS_ACTIVE);

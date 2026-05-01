@@ -7,6 +7,7 @@ use App\Models\Course;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -65,6 +66,27 @@ class CourseController extends Controller
     public function deactivate(Request $request, Course $course): JsonResponse
     {
         return $this->setStatus($request, $course, 'inactive');
+    }
+
+    public function destroy(Request $request, Course $course): JsonResponse
+    {
+        $user = $this->requireCatalogManager($request);
+        abort_unless($course->school_id === $user->school_id, 404);
+
+        $links = [
+            ['table' => 'assessments', 'column' => 'course_id', 'label' => 'assessments'],
+            ['table' => 'staff_course_assignments', 'column' => 'course_id', 'label' => 'lecturer assignments'],
+            ['table' => 'student_course_enrollments', 'column' => 'course_id', 'label' => 'student enrollments'],
+        ];
+
+        foreach ($links as $link) {
+            if (DB::table($link['table'])->where($link['column'], $course->id)->exists()) {
+                abort(422, "Cannot delete: this course is linked to existing {$link['label']}.");
+            }
+        }
+
+        $course->delete();
+        return response()->json(null, 204);
     }
 
     /**

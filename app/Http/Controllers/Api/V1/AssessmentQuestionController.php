@@ -17,12 +17,23 @@ class AssessmentQuestionController extends Controller
 {
     public function index(Request $request, Assessment $assessment): JsonResponse
     {
-        $actor = $this->requireManager($request);
-        abort_unless($assessment->school_id === $actor->school_id, 404);
+        $user = $request->user();
+        abort_unless($user instanceof User && $user->school_id, 401);
+        abort_unless($assessment->school_id === $user->school_id, 404);
+        abort_unless($user->canManageAssessments() || $user->canTakeExams(), 403);
 
-        return response()->json([
-            'data' => $assessment->questions()->with('options')->get(),
-        ]);
+        $questions = $assessment->questions()->with('options')->get();
+
+        if ($user->canTakeExams()) {
+            $questions = $questions->map(function ($question) {
+                $question->options->each(function ($option) {
+                    unset($option->is_correct);
+                });
+                return $question;
+            });
+        }
+
+        return response()->json(['data' => $questions]);
     }
 
     public function store(Request $request, Assessment $assessment): JsonResponse

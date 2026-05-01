@@ -8,6 +8,7 @@ use App\Models\Level;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class DepartmentController extends Controller
@@ -140,6 +141,30 @@ class DepartmentController extends Controller
         $department->update(['status' => $status]);
 
         return response()->json(['message' => "Department {$status} successfully.", 'data' => $department->load('levels')]);
+    }
+
+    public function destroy(Request $request, Department $department): JsonResponse
+    {
+        $user = $this->requireCatalogManager($request);
+        abort_unless($department->school_id === $user->school_id, 404);
+
+        $links = [
+            ['table' => 'users', 'column' => 'department_id', 'label' => 'students/staff'],
+            ['table' => 'courses', 'column' => 'department_id', 'label' => 'courses'],
+            ['table' => 'assessments', 'column' => 'department_id', 'label' => 'assessments'],
+            ['table' => 'staff_course_assignments', 'column' => 'department_id', 'label' => 'lecturer assignments'],
+            ['table' => 'staff_exam_officers', 'column' => 'department_id', 'label' => 'exam officer assignments'],
+        ];
+
+        foreach ($links as $link) {
+            if (DB::table($link['table'])->where($link['column'], $department->id)->exists()) {
+                abort(422, "Cannot delete: this department is linked to existing {$link['label']}.");
+            }
+        }
+
+        $department->levels()->detach();
+        $department->delete();
+        return response()->json(null, 204);
     }
 
     private function schoolId(Request $request): int

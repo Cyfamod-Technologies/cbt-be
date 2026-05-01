@@ -7,6 +7,7 @@ use App\Models\Level;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class LevelController extends Controller
@@ -84,6 +85,29 @@ class LevelController extends Controller
         $level->update(['status' => $status]);
 
         return response()->json(['message' => "Level {$status} successfully.", 'data' => $level]);
+    }
+
+    public function destroy(Request $request, Level $level): JsonResponse
+    {
+        $user = $this->requireCatalogManager($request);
+        abort_unless($level->school_id === $user->school_id, 404);
+
+        $links = [
+            ['table' => 'users', 'column' => 'level_id', 'label' => 'students'],
+            ['table' => 'courses', 'column' => 'level_id', 'label' => 'courses'],
+            ['table' => 'assessments', 'column' => 'level_id', 'label' => 'assessments'],
+            ['table' => 'staff_course_assignments', 'column' => 'level_id', 'label' => 'lecturer assignments'],
+            ['table' => 'staff_exam_officers', 'column' => 'level_id', 'label' => 'exam officer assignments'],
+        ];
+
+        foreach ($links as $link) {
+            if (DB::table($link['table'])->where($link['column'], $level->id)->exists()) {
+                abort(422, "Cannot delete: this level is linked to existing {$link['label']}.");
+            }
+        }
+
+        $level->delete();
+        return response()->json(null, 204);
     }
 
     private function schoolId(Request $request): int

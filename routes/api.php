@@ -38,6 +38,7 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::patch('sessions/{session}/activate', [AcademicSessionController::class, 'activate'])->name('sessions.activate');
         Route::patch('sessions/{session}/deactivate', [AcademicSessionController::class, 'deactivate'])->name('sessions.deactivate');
         Route::patch('sessions/{session}/current', [AcademicSessionController::class, 'setCurrent'])->name('sessions.current');
+        Route::delete('sessions/{session}', [AcademicSessionController::class, 'destroy'])->name('sessions.destroy');
 
         Route::get('semesters', [SemesterController::class, 'index'])->name('semesters.index');
         Route::post('semesters', [SemesterController::class, 'store'])->name('semesters.store');
@@ -46,6 +47,7 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::patch('semesters/{semester}/activate', [SemesterController::class, 'activate'])->name('semesters.activate');
         Route::patch('semesters/{semester}/deactivate', [SemesterController::class, 'deactivate'])->name('semesters.deactivate');
         Route::patch('semesters/{semester}/current', [SemesterController::class, 'setCurrent'])->name('semesters.current');
+        Route::delete('semesters/{semester}', [SemesterController::class, 'destroy'])->name('semesters.destroy');
 
         Route::get('departments', [DepartmentController::class, 'index'])->name('departments.index');
         Route::post('departments', [DepartmentController::class, 'store'])->name('departments.store');
@@ -55,6 +57,7 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::patch('departments/{department}/deactivate', [DepartmentController::class, 'deactivate'])->name('departments.deactivate');
         Route::post('departments/{department}/levels', [DepartmentController::class, 'storeLevel'])->name('departments.levels.store');
         Route::delete('departments/{department}/levels/{level}', [DepartmentController::class, 'destroyLevel'])->name('departments.levels.destroy');
+        Route::delete('departments/{department}', [DepartmentController::class, 'destroy'])->name('departments.destroy');
 
         Route::get('levels', [LevelController::class, 'index'])->name('levels.index');
         Route::post('levels', [LevelController::class, 'store'])->name('levels.store');
@@ -62,6 +65,7 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::put('levels/{level}', [LevelController::class, 'update'])->name('levels.update');
         Route::patch('levels/{level}/activate', [LevelController::class, 'activate'])->name('levels.activate');
         Route::patch('levels/{level}/deactivate', [LevelController::class, 'deactivate'])->name('levels.deactivate');
+        Route::delete('levels/{level}', [LevelController::class, 'destroy'])->name('levels.destroy');
 
         Route::get('courses', [CourseController::class, 'index'])->name('courses.index');
         Route::post('courses', [CourseController::class, 'store'])->name('courses.store');
@@ -69,6 +73,7 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::put('courses/{course}', [CourseController::class, 'update'])->name('courses.update');
         Route::patch('courses/{course}/activate', [CourseController::class, 'activate'])->name('courses.activate');
         Route::patch('courses/{course}/deactivate', [CourseController::class, 'deactivate'])->name('courses.deactivate');
+        Route::delete('courses/{course}', [CourseController::class, 'destroy'])->name('courses.destroy');
 
         Route::get('assessments/available', [AssessmentController::class, 'available'])->name('assessments.available');
         Route::get('assessments', [AssessmentController::class, 'index'])->name('assessments.index');
@@ -94,6 +99,7 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::put('staff/{staff}', [StaffController::class, 'update'])->name('staff.update');
         Route::patch('staff/{staff}/activate', [StaffController::class, 'activate'])->name('staff.activate');
         Route::patch('staff/{staff}/deactivate', [StaffController::class, 'deactivate'])->name('staff.deactivate');
+        Route::delete('staff/{staff}', [StaffController::class, 'destroy'])->name('staff.destroy');
         Route::get('staff-permissions', [StaffPermissionController::class, 'show'])->name('staff-permissions.show');
 
         Route::get('staff-course-assignments', [StaffCourseAssignmentController::class, 'index'])->name('staff-course-assignments.index');
