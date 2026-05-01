@@ -11,25 +11,25 @@ use Illuminate\Validation\Rule;
 
 class StudentCourseEnrollmentController extends Controller
 {
-    public function index(Request $request, User $student): JsonResponse
+    public function index(Request $request, User $user): JsonResponse
     {
         $authUser = $request->user();
         abort_unless($authUser instanceof User && $authUser->canManageUsers(), 403);
-        abort_unless($student->school_id === $authUser->school_id, 404);
+        abort_unless($user->school_id === $authUser->school_id, 404);
 
         return response()->json([
             'data' => StudentCourseEnrollment::with(['course.department', 'course.level', 'course.semester'])
-                ->where('student_id', $student->id)
+                ->where('student_id', $user->id)
                 ->get(),
         ]);
     }
 
-    public function store(Request $request, User $student): JsonResponse
+    public function store(Request $request, User $user): JsonResponse
     {
         $authUser = $request->user();
         abort_unless($authUser instanceof User && $authUser->canManageUsers(), 403);
         abort_unless(
-            $student->school_id === $authUser->school_id && $student->role === User::ROLE_STUDENT,
+            $user->school_id === $authUser->school_id && $user->role === User::ROLE_STUDENT,
             404,
         );
 
@@ -43,7 +43,7 @@ class StudentCourseEnrollmentController extends Controller
         ]);
 
         $enrollment = StudentCourseEnrollment::firstOrCreate(
-            ['student_id' => $student->id, 'course_id' => $validated['course_id']],
+            ['student_id' => $user->id, 'course_id' => $validated['course_id']],
             [
                 'school_id' => $authUser->school_id,
                 'type'       => $validated['type'] ?? 'carryover',
@@ -55,12 +55,12 @@ class StudentCourseEnrollmentController extends Controller
         ], 201);
     }
 
-    public function destroy(Request $request, User $student, StudentCourseEnrollment $enrollment): JsonResponse
+    public function destroy(Request $request, User $user, StudentCourseEnrollment $enrollment): JsonResponse
     {
         $authUser = $request->user();
         abort_unless($authUser instanceof User && $authUser->canManageUsers(), 403);
-        abort_unless($student->school_id === $authUser->school_id, 404);
-        abort_unless($enrollment->student_id === $student->id, 404);
+        abort_unless($user->school_id === $authUser->school_id, 404);
+        abort_unless($enrollment->student_id === $user->id, 404);
 
         $enrollment->delete();
 
