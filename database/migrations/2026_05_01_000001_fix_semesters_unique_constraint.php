@@ -8,17 +8,29 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('semesters', function (Blueprint $table): void {
-            $table->dropUnique('semesters_school_id_name_unique');
-            $table->unique(['school_id', 'session_id', 'name'], 'semesters_school_id_session_id_name_unique');
+        $existingIndexes = collect(Schema::getIndexes('semesters'))->pluck('name');
+
+        Schema::table('semesters', function (Blueprint $table) use ($existingIndexes): void {
+            if ($existingIndexes->contains('semesters_school_id_name_unique')) {
+                $table->dropUnique('semesters_school_id_name_unique');
+            }
+            if (!$existingIndexes->contains('semesters_school_id_session_id_name_unique')) {
+                $table->unique(['school_id', 'session_id', 'name'], 'semesters_school_id_session_id_name_unique');
+            }
         });
     }
 
     public function down(): void
     {
-        Schema::table('semesters', function (Blueprint $table): void {
-            $table->dropUnique('semesters_school_id_session_id_name_unique');
-            $table->unique(['school_id', 'name'], 'semesters_school_id_name_unique');
+        $existingIndexes = collect(Schema::getIndexes('semesters'))->pluck('name');
+
+        Schema::table('semesters', function (Blueprint $table) use ($existingIndexes): void {
+            if ($existingIndexes->contains('semesters_school_id_session_id_name_unique')) {
+                $table->dropUnique('semesters_school_id_session_id_name_unique');
+            }
+            if (!$existingIndexes->contains('semesters_school_id_name_unique')) {
+                $table->unique(['school_id', 'name'], 'semesters_school_id_name_unique');
+            }
         });
     }
 };
