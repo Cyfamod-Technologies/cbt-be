@@ -223,6 +223,8 @@ class DatabaseSeeder extends Seeder
             );
         }
 
+        $this->call(DemoSchoolSeeder::class);
+
         if ($student) {
             $attempt = AssessmentAttempt::updateOrCreate(
                 ['school_id' => $school->id, 'assessment_id' => $assessment->id, 'student_id' => $student->id, 'status' => 'submitted'],
