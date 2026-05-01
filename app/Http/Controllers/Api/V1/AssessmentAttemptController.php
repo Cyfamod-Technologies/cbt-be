@@ -23,6 +23,9 @@ class AssessmentAttemptController extends Controller
     {
         $user = $this->requireSchoolUser($request);
 
+        // Expire any overdue in-progress attempts before returning the list
+        $this->expireOverdueForSchool($user->school_id);
+
         $query = AssessmentAttempt::with(['assessment.session', 'assessment.semester', 'assessment.department', 'assessment.level', 'student'])
             ->where('school_id', $user->school_id)
             ->latest('id');
@@ -102,6 +105,9 @@ class AssessmentAttemptController extends Controller
         abort_unless($assessmentAttempt->school_id === $user->school_id, 404);
         $this->authorizeAttemptAccess($user, $assessmentAttempt);
 
+        // Expire the attempt if it has overrun its time limit
+        $this->expireAttemptIfOverdue($assessmentAttempt);
+
         return response()->json([
             'data' => $this->formatAttempt($assessmentAttempt->load(['assessment.questions.options', 'answers']))
         ]);
@@ -179,6 +185,64 @@ class AssessmentAttemptController extends Controller
             'message' => 'Assessment submitted successfully.',
             'data' => $this->formatAttempt($graded),
         ]);
+    }
+
+    /**
+     * Expire all in-progress attempts for a school whose time window has passed.
+     * Uses a single DB-level query to find only truly overdue attempts.
+     */
+    private function expireOverdueForSchool(int $schoolId): void
+    {
+        $overdue = AssessmentAttempt::with(['assessment.questions'])
+            ->join('assessments', 'assessments.id', '=', 'assessment_attempts.assessment_id')
+            ->where('assessment_attempts.school_id', $schoolId)
+            ->where('assessment_attempts.status', 'in_progress')
+            ->whereNotNull('assessment_attempts.start_time')
+            ->whereNotNull('assessments.duration_minutes')
+            ->whereRaw('DATE_ADD(assessment_attempts.start_time, INTERVAL assessments.duration_minutes MINUTE) <= NOW()')
+            ->select('assessment_attempts.*')
+            ->get();
+
+        foreach ($overdue as $attempt) {
+            $this->expireAttemptIfOverdue($attempt);
+        }
+    }
+
+    /**
+     * Mark a single in-progress attempt as submitted if its time has elapsed.
+     */
+    private function expireAttemptIfOverdue(AssessmentAttempt $attempt): void
+    {
+        if ($attempt->status !== 'in_progress') {
+            return;
+        }
+
+        $attempt->loadMissing(['assessment.questions']);
+
+        $durationMinutes = (int) ($attempt->assessment?->duration_minutes ?? 0);
+        if (! $attempt->start_time || $durationMinutes <= 0) {
+            return;
+        }
+
+        $expiresAt = $attempt->start_time->copy()->addMinutes($durationMinutes);
+        if ($expiresAt->isFuture()) {
+            return;
+        }
+
+        $totalMarks = (float) $attempt->assessment->questions->sum(fn ($q) => (float) $q->marks);
+
+        DB::transaction(function () use ($attempt, $expiresAt, $totalMarks): void {
+            $attempt->update([
+                'end_time'    => $expiresAt,
+                'score'       => 0.0,
+                'total_marks' => $totalMarks,
+                'percentage'  => 0.0,
+                'grade'       => 'fail',
+                'status'      => 'submitted',
+            ]);
+        });
+
+        $attempt->refresh();
     }
 
     private function formatAttempt(AssessmentAttempt $attempt): array
