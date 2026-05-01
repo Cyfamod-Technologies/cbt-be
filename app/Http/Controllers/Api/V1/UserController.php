@@ -52,10 +52,10 @@ class UserController extends Controller
 
     public function show(Request $request, User $user): JsonResponse
     {
-        $this->requireUserManager($request);
-        abort_unless($user->school_id === $this->schoolId($request), 404);
+        $schoolId = $this->schoolId($request);
+        abort_unless($user->school_id === $schoolId, 404);
 
-        return response()->json(['data' => $user]);
+        return response()->json(['data' => $user->load(['department', 'level'])]);
     }
 
     public function store(Request $request): JsonResponse
