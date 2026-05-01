@@ -18,13 +18,17 @@ class AssessmentController extends Controller
     {
         $actor = $this->requireManager($request);
 
-        return response()->json([
-            'data' => Assessment::with(['session', 'semester', 'department', 'level', 'course'])
-                ->withCount(['questions', 'attempts'])
-                ->where('school_id', $actor->school_id)
-                ->latest('id')
-                ->get(),
-        ]);
+        $query = Assessment::with(['session', 'semester', 'department', 'level', 'course'])
+            ->withCount(['questions', 'attempts'])
+            ->where('school_id', $actor->school_id)
+            ->latest('id');
+
+        if ($actor->role === User::ROLE_STAFF) {
+            $assignedIds = $actor->staff?->courseAssignments()->pluck('course_id') ?? collect();
+            $query->whereIn('course_id', $assignedIds);
+        }
+
+        return response()->json(['data' => $query->get()]);
     }
 
     public function available(Request $request): JsonResponse

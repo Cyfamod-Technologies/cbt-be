@@ -15,12 +15,19 @@ class CourseController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        return response()->json([
-            'data' => Course::with(['department', 'level', 'semester'])
-                ->where('school_id', $this->schoolId($request))
-                ->orderBy('code')
-                ->get(),
-        ]);
+        $user = $request->user();
+        abort_unless($user instanceof User && $user->school_id, 401);
+
+        $query = Course::with(['department', 'level', 'semester'])
+            ->where('school_id', $user->school_id)
+            ->orderBy('code');
+
+        if ($user->role === User::ROLE_STAFF) {
+            $assignedIds = $user->staff?->courseAssignments()->pluck('course_id') ?? collect();
+            $query->whereIn('id', $assignedIds);
+        }
+
+        return response()->json(['data' => $query->get()]);
     }
 
     public function store(Request $request): JsonResponse

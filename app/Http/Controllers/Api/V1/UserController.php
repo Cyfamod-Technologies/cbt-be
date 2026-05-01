@@ -19,15 +19,18 @@ class UserController extends Controller
         $authUser = $request->user();
         abort_unless($authUser instanceof User && $authUser->school_id, 401);
 
-        // Staff can only view students from their own assigned department
+        // Staff can only view students in departments of their assigned courses
         if ($authUser->role === User::ROLE_STAFF) {
             $staffProfile = $authUser->staff;
-            abort_unless($staffProfile !== null && $staffProfile->department_id !== null, 403);
+            abort_unless($staffProfile !== null, 403);
+
+            $assignedCourseIds = $staffProfile->courseAssignments()->pluck('course_id');
+            $deptIds = \App\Models\Course::whereIn('id', $assignedCourseIds)->pluck('department_id')->unique();
 
             $students = User::query()
                 ->where('school_id', $authUser->school_id)
                 ->where('role', User::ROLE_STUDENT)
-                ->where('department_id', $staffProfile->department_id)
+                ->whereIn('department_id', $deptIds)
                 ->with(['department', 'level'])
                 ->orderBy('name')
                 ->get();

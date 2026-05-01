@@ -35,6 +35,11 @@ class AssessmentAttemptController extends Controller
                 $query->where('assessment_id', $request->integer('assessment_id'));
             }
 
+            if ($user->role === User::ROLE_STAFF) {
+                $assignedIds = $user->staff?->courseAssignments()->pluck('course_id') ?? collect();
+                $query->whereHas('assessment', fn ($q) => $q->whereIn('course_id', $assignedIds));
+            }
+
             return response()->json(['data' => $query->get()]);
         }
 
