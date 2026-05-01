@@ -148,16 +148,15 @@ class AcademicSessionController extends Controller
         abort_unless($session->school_id === $user->school_id, 404);
 
         $links = [
-            ['table' => 'semesters', 'column' => 'session_id', 'label' => 'semesters'],
-            ['table' => 'assessments', 'column' => 'session_id', 'label' => 'assessments'],
-            ['table' => 'staff_course_assignments', 'column' => 'session_id', 'label' => 'lecturer assignments'],
-            ['table' => 'staff_exam_officers', 'column' => 'session_id', 'label' => 'exam officer assignments'],
+            ['table' => 'semesters',               'column' => 'session_id', 'label' => 'semesters',               'unlinkable' => true],
+            ['table' => 'assessments',              'column' => 'session_id', 'label' => 'assessments',              'unlinkable' => false],
+            ['table' => 'staff_course_assignments', 'column' => 'session_id', 'label' => 'lecturer assignments',     'unlinkable' => true],
+            ['table' => 'staff_exam_officers',      'column' => 'session_id', 'label' => 'exam officer assignments', 'unlinkable' => true],
         ];
 
-        foreach ($links as $link) {
-            if (DB::table($link['table'])->where($link['column'], $session->id)->exists()) {
-                abort(422, "Cannot delete: this session is linked to existing {$link['label']}.");
-            }
+        $blocked = $this->handleLinkedOrCascade($request, $links, $session->id, "this session");
+        if ($blocked !== null) {
+            return $blocked;
         }
 
         $session->delete();

@@ -228,14 +228,13 @@ class UserController extends Controller
 
         if ($user->role === User::ROLE_STUDENT) {
             $links = [
-                ['table' => 'assessment_attempts', 'column' => 'student_id', 'label' => 'assessment attempts'],
-                ['table' => 'student_course_enrollments', 'column' => 'student_id', 'label' => 'course enrollments'],
+                ['table' => 'assessment_attempts',       'column' => 'student_id', 'label' => 'assessment attempts', 'unlinkable' => false],
+                ['table' => 'student_course_enrollments','column' => 'student_id', 'label' => 'course enrollments',  'unlinkable' => true],
             ];
 
-            foreach ($links as $link) {
-                if (DB::table($link['table'])->where($link['column'], $user->id)->exists()) {
-                    abort(422, "Cannot delete: this student is linked to existing {$link['label']}.");
-                }
+            $blocked = $this->handleLinkedOrCascade($request, $links, $user->id, "this student");
+            if ($blocked !== null) {
+                return $blocked;
             }
         }
 
@@ -243,14 +242,13 @@ class UserController extends Controller
             $staff = DB::table('staff')->where('user_id', $user->id)->first();
             if ($staff) {
                 $links = [
-                    ['table' => 'staff_course_assignments', 'column' => 'staff_id', 'label' => 'course assignments'],
-                    ['table' => 'staff_exam_officers', 'column' => 'staff_id', 'label' => 'exam officer assignments'],
+                    ['table' => 'staff_course_assignments', 'column' => 'staff_id', 'label' => 'course assignments',       'unlinkable' => true],
+                    ['table' => 'staff_exam_officers',      'column' => 'staff_id', 'label' => 'exam officer assignments', 'unlinkable' => true],
                 ];
 
-                foreach ($links as $link) {
-                    if (DB::table($link['table'])->where($link['column'], $staff->id)->exists()) {
-                        abort(422, "Cannot delete: this staff is linked to existing {$link['label']}.");
-                    }
+                $blocked = $this->handleLinkedOrCascade($request, $links, $staff->id, "this staff");
+                if ($blocked !== null) {
+                    return $blocked;
                 }
             }
         }

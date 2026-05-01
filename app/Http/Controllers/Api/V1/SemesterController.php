@@ -126,15 +126,14 @@ class SemesterController extends Controller
         abort_unless($semester->school_id === $user->school_id, 404);
 
         $links = [
-            ['table' => 'assessments', 'column' => 'semester_id', 'label' => 'assessments'],
-            ['table' => 'staff_course_assignments', 'column' => 'semester_id', 'label' => 'lecturer assignments'],
-            ['table' => 'staff_exam_officers', 'column' => 'semester_id', 'label' => 'exam officer assignments'],
+            ['table' => 'assessments',              'column' => 'semester_id', 'label' => 'assessments',              'unlinkable' => false],
+            ['table' => 'staff_course_assignments', 'column' => 'semester_id', 'label' => 'lecturer assignments',     'unlinkable' => true],
+            ['table' => 'staff_exam_officers',      'column' => 'semester_id', 'label' => 'exam officer assignments', 'unlinkable' => true],
         ];
 
-        foreach ($links as $link) {
-            if (DB::table($link['table'])->where($link['column'], $semester->id)->exists()) {
-                abort(422, "Cannot delete: this semester is linked to existing {$link['label']}.");
-            }
+        $blocked = $this->handleLinkedOrCascade($request, $links, $semester->id, "this semester");
+        if ($blocked !== null) {
+            return $blocked;
         }
 
         $semester->delete();

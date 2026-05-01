@@ -74,15 +74,14 @@ class CourseController extends Controller
         abort_unless($course->school_id === $user->school_id, 404);
 
         $links = [
-            ['table' => 'assessments', 'column' => 'course_id', 'label' => 'assessments'],
-            ['table' => 'staff_course_assignments', 'column' => 'course_id', 'label' => 'lecturer assignments'],
-            ['table' => 'student_course_enrollments', 'column' => 'course_id', 'label' => 'student enrollments'],
+            ['table' => 'assessments',               'column' => 'course_id', 'label' => 'assessments',           'unlinkable' => false],
+            ['table' => 'staff_course_assignments',  'column' => 'course_id', 'label' => 'lecturer assignments',  'unlinkable' => true],
+            ['table' => 'student_course_enrollments','column' => 'course_id', 'label' => 'student enrollments',   'unlinkable' => true],
         ];
 
-        foreach ($links as $link) {
-            if (DB::table($link['table'])->where($link['column'], $course->id)->exists()) {
-                abort(422, "Cannot delete: this course is linked to existing {$link['label']}.");
-            }
+        $blocked = $this->handleLinkedOrCascade($request, $links, $course->id, "this course");
+        if ($blocked !== null) {
+            return $blocked;
         }
 
         $course->delete();

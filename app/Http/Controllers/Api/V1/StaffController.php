@@ -123,14 +123,13 @@ class StaffController extends Controller
         abort_unless($staff->school_id === $actor->school_id, 404);
 
         $links = [
-            ['table' => 'staff_course_assignments', 'column' => 'staff_id', 'label' => 'course assignments'],
-            ['table' => 'staff_exam_officers', 'column' => 'staff_id', 'label' => 'exam officer assignments'],
+            ['table' => 'staff_course_assignments', 'column' => 'staff_id', 'label' => 'course assignments',        'unlinkable' => true],
+            ['table' => 'staff_exam_officers',      'column' => 'staff_id', 'label' => 'exam officer assignments',  'unlinkable' => true],
         ];
 
-        foreach ($links as $link) {
-            if (DB::table($link['table'])->where($link['column'], $staff->id)->exists()) {
-                abort(422, "Cannot delete: this staff is linked to existing {$link['label']}.");
-            }
+        $blocked = $this->handleLinkedOrCascade($request, $links, $staff->id, "this staff");
+        if ($blocked !== null) {
+            return $blocked;
         }
 
         DB::transaction(function () use ($staff): void {
