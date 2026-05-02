@@ -131,7 +131,7 @@ class AuthController extends Controller
         $validated = $request->validate([
             'school_code' => ['required', 'string'],
             'matric_no'   => ['required', 'string'],
-            'name'        => ['required', 'string'],
+            'password'    => ['required', 'string'],
         ]);
 
         $school = School::where('code', strtoupper(trim($validated['school_code'])))
@@ -148,10 +148,7 @@ class AuthController extends Controller
             ->first();
 
         abort_unless($student, 422, 'Student not found. Check your matric number.');
-
-        $inputName       = strtolower(trim($validated['name']));
-        $storedFirstWord = strtolower(strtok(trim($student->name), ' '));
-        abort_unless($inputName === $storedFirstWord, 422, 'Name does not match our records.');
+        abort_unless(Hash::check($validated['password'], $student->password), 422, 'Incorrect password.');
 
         $student->forceFill(['last_login_at' => now()])->save();
 
@@ -160,15 +157,34 @@ class AuthController extends Controller
         return response()->json([
             'token' => $token,
             'user'  => [
-                'id'            => $student->id,
-                'name'          => $student->name,
-                'matric_no'     => $student->matric_no,
-                'department_id' => $student->department_id,
-                'level_id'      => $student->level_id,
-                'department'    => $student->department ? ['id' => $student->department->id, 'name' => $student->department->name] : null,
-                'level'         => $student->level       ? ['id' => $student->level->id,       'name' => $student->level->name]       : null,
+                'id'                    => $student->id,
+                'name'                  => $student->name,
+                'matric_no'             => $student->matric_no,
+                'department_id'         => $student->department_id,
+                'level_id'              => $student->level_id,
+                'force_password_change' => (bool) $student->force_password_change,
+                'department'            => $student->department ? ['id' => $student->department->id, 'name' => $student->department->name] : null,
+                'level'                 => $student->level       ? ['id' => $student->level->id,       'name' => $student->level->name]       : null,
             ],
         ]);
+    }
+
+    public function studentChangePassword(Request $request): JsonResponse
+    {
+        $student = $request->user();
+        abort_unless($student instanceof User && $student->canTakeExams(), 403);
+
+        $validated = $request->validate([
+            'password'              => ['required', 'string', 'min:6'],
+            'password_confirmation' => ['required', 'same:password'],
+        ]);
+
+        $student->forceFill([
+            'password'              => Hash::make($validated['password']),
+            'force_password_change' => false,
+        ])->save();
+
+        return response()->json(['message' => 'Password updated successfully.']);
     }
 
     public function logout(Request $request): JsonResponse

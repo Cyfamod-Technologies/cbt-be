@@ -30,6 +30,7 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
     Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('me', CurrentUserController::class)->name('me');
         Route::post('auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
+        Route::post('auth/student-change-password', [AuthController::class, 'studentChangePassword'])->name('auth.student-change-password');
 
         Route::get('sessions', [AcademicSessionController::class, 'index'])->name('sessions.index');
         Route::post('sessions', [AcademicSessionController::class, 'store'])->name('sessions.store');

@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'school_id',
     'code',
     'title',
+    'credit_unit',
     'department_id',
     'level_id',
     'semester_id',

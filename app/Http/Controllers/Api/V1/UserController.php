@@ -132,9 +132,18 @@ class UserController extends Controller
             }
         }
 
+        $isStudent = $validated['role'] === User::ROLE_STUDENT;
+        $forcePasswordChange = false;
+
         if ($password === null || $password === '') {
-            $temporaryPassword = Str::random(10);
-            $password = $temporaryPassword;
+            if ($isStudent) {
+                $password = '123456';
+                $forcePasswordChange = true;
+                $temporaryPassword = $password;
+            } else {
+                $temporaryPassword = Str::random(10);
+                $password = $temporaryPassword;
+            }
         }
 
         $user = User::create([
@@ -152,6 +161,7 @@ class UserController extends Controller
             'photo_url' => $photoUrl,
             'email' => $email,
             'password' => Hash::make($password ?? ''),
+            'force_password_change' => $forcePasswordChange,
             'role' => $validated['role'],
             'status' => $validated['status'] ?? User::STATUS_ACTIVE,
         ]);

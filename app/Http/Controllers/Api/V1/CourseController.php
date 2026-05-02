@@ -110,6 +110,7 @@ class CourseController extends Controller
                 'max:80',
             ],
             'title' => [$required, 'string', 'max:255'],
+            'credit_unit' => ['sometimes', 'integer', 'min:0', 'max:20'],
             'department_id' => [
                 'sometimes',
                 'nullable',
