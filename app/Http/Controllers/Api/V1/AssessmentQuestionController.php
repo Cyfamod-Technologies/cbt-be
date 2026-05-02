@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Assessment;
 use App\Models\AssessmentQuestion;
 use App\Models\AssessmentQuestionOption;
+use App\Models\QuestionBankItem;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -101,6 +102,62 @@ class AssessmentQuestionController extends Controller
         }
 
         return response()->json(null, 204);
+    }
+
+    public function importFromBank(Request $request, Assessment $assessment): JsonResponse
+    {
+        $actor = $this->requireManager($request);
+        abort_unless($assessment->school_id === $actor->school_id, 404);
+
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer'],
+        ]);
+
+        $bankItems = QuestionBankItem::with('options')
+            ->whereIn('id', $validated['ids'])
+            ->where('school_id', $actor->school_id)
+            ->get();
+
+        $created = DB::transaction(function () use ($bankItems, $actor, $assessment) {
+            $nextSortOrder = (int) $assessment->questions()->max('sort_order') + 1;
+            $questions = [];
+
+            foreach ($bankItems as $bankItem) {
+                $question = AssessmentQuestion::create([
+                    'school_id' => $actor->school_id,
+                    'assessment_id' => $assessment->id,
+                    'created_by' => $actor->id,
+                    'question_text' => $bankItem->question_text,
+                    'question_type' => $bankItem->question_type,
+                    'marks' => $bankItem->marks,
+                    'sort_order' => $nextSortOrder++,
+                    'correct_answer' => $bankItem->correct_answer,
+                    'explanation' => $bankItem->explanation,
+                ]);
+
+                foreach ($bankItem->options as $bankOption) {
+                    AssessmentQuestionOption::create([
+                        'school_id' => $actor->school_id,
+                        'question_id' => $question->id,
+                        'option_text' => $bankOption->option_text,
+                        'sort_order' => $bankOption->sort_order,
+                        'is_correct' => $bankOption->is_correct,
+                    ]);
+                }
+
+                $questions[] = $question->load('options');
+            }
+
+            return $questions;
+        });
+
+        $this->refreshAssessmentCounts($assessment);
+
+        return response()->json([
+            'message' => 'Questions imported from bank successfully.',
+            'data' => $created,
+        ], 201);
     }
 
     public function import(Request $request, Assessment $assessment): JsonResponse

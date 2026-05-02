@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\V1\StaffController;
 use App\Http\Controllers\Api\V1\StaffCourseAssignmentController;
 use App\Http\Controllers\Api\V1\StaffExamOfficerController;
 use App\Http\Controllers\Api\V1\StudentCourseEnrollmentController;
+use App\Http\Controllers\Api\V1\QuestionBankController;
 use App\Http\Controllers\Api\V1\StaffPermissionController;
 use App\Http\Controllers\Api\V1\UserController;
 use Illuminate\Support\Facades\Route;
@@ -86,9 +87,15 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::patch('assessments/{assessment}/close', [AssessmentController::class, 'close'])->name('assessments.close');
         Route::get('assessments/{assessment}/questions', [AssessmentQuestionController::class, 'index'])->name('assessments.questions.index');
         Route::post('assessments/{assessment}/questions', [AssessmentQuestionController::class, 'store'])->name('assessments.questions.store');
+        Route::post('assessments/{assessment}/questions/import-from-bank', [AssessmentQuestionController::class, 'importFromBank'])->name('assessments.questions.import-from-bank');
         Route::post('assessments/{assessment}/questions/import', [AssessmentQuestionController::class, 'import'])->name('assessments.questions.import');
         Route::put('assessment-questions/{assessmentQuestion}', [AssessmentQuestionController::class, 'update'])->name('assessment-questions.update');
         Route::delete('assessment-questions/{assessmentQuestion}', [AssessmentQuestionController::class, 'destroy'])->name('assessment-questions.destroy');
+        Route::get('question-bank', [QuestionBankController::class, 'index'])->name('question-bank.index');
+        Route::post('question-bank', [QuestionBankController::class, 'store'])->name('question-bank.store');
+        Route::put('question-bank/{questionBankItem}', [QuestionBankController::class, 'update'])->name('question-bank.update');
+        Route::delete('question-bank/{questionBankItem}', [QuestionBankController::class, 'destroy'])->name('question-bank.destroy');
+
         Route::get('assessment-attempts', [AssessmentAttemptController::class, 'index'])->name('assessment-attempts.index');
         Route::post('assessments/{assessment}/attempts', [AssessmentAttemptController::class, 'store'])->name('assessments.attempts.store');
         Route::get('assessment-attempts/{assessmentAttempt}', [AssessmentAttemptController::class, 'show'])->name('assessment-attempts.show');
