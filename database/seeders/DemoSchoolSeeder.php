@@ -11,6 +11,8 @@ use App\Models\AssessmentQuestionOption;
 use App\Models\Course;
 use App\Models\Department;
 use App\Models\Level;
+use App\Models\QuestionBankItem;
+use App\Models\QuestionBankItemOption;
 use App\Models\School;
 use App\Models\SchoolSetting;
 use App\Models\Semester;
@@ -88,23 +90,24 @@ class DemoSchoolSeeder extends Seeder
             ]);
         }
 
-        // ── Courses ──────────────────────────────────────────────────────────
+        // ── Courses (with credit_unit) ────────────────────────────────────────
+        // [code, title, dept, level, semester, credit_unit]
 
         $courseDefinitions = [
-            ['CSC101', 'Introduction to Computing',      $csc, $nd1, $sem1],
-            ['CSC102', 'Programming Fundamentals',        $csc, $nd1, $sem2],
-            ['CSC201', 'Data Structures and Algorithms',  $csc, $nd2, $sem1],
-            ['CSC202', 'Database Management Systems',     $csc, $nd2, $sem2],
-            ['BUS101', 'Principles of Management',        $bus, $nd1, $sem1],
-            ['BUS102', 'Business Communication',          $bus, $nd1, $sem2],
-            ['BUS201', 'Business Finance',                $bus, $nd2, $sem1],
-            ['EEE101', 'Circuit Theory I',                $eee, $nd1, $sem1],
-            ['EEE102', 'Electronics Fundamentals',        $eee, $nd1, $sem2],
-            ['EEE201', 'Digital Electronics',             $eee, $nd2, $sem1],
+            ['CSC101', 'Introduction to Computing',      $csc, $nd1, $sem1, 3],
+            ['CSC102', 'Programming Fundamentals',        $csc, $nd1, $sem2, 4],
+            ['CSC201', 'Data Structures and Algorithms',  $csc, $nd2, $sem1, 4],
+            ['CSC202', 'Database Management Systems',     $csc, $nd2, $sem2, 3],
+            ['BUS101', 'Principles of Management',        $bus, $nd1, $sem1, 3],
+            ['BUS102', 'Business Communication',          $bus, $nd1, $sem2, 2],
+            ['BUS201', 'Business Finance',                $bus, $nd2, $sem1, 3],
+            ['EEE101', 'Circuit Theory I',                $eee, $nd1, $sem1, 4],
+            ['EEE102', 'Electronics Fundamentals',        $eee, $nd1, $sem2, 3],
+            ['EEE201', 'Digital Electronics',             $eee, $nd2, $sem1, 4],
         ];
 
         $courses = [];
-        foreach ($courseDefinitions as [$code, $title, $dept, $level, $sem]) {
+        foreach ($courseDefinitions as [$code, $title, $dept, $level, $sem, $creditUnit]) {
             $courses[$code] = Course::updateOrCreate(
                 [
                     'school_id'     => $school->id,
@@ -113,7 +116,7 @@ class DemoSchoolSeeder extends Seeder
                     'level_id'      => $level->id,
                     'semester_id'   => $sem->id,
                 ],
-                ['title' => $title, 'status' => 'active'],
+                ['title' => $title, 'status' => 'active', 'credit_unit' => $creditUnit],
             );
         }
 
@@ -266,6 +269,322 @@ class DemoSchoolSeeder extends Seeder
                     ],
                     ['status' => 'active'],
                 );
+            }
+        }
+
+        // ── Question Bank ─────────────────────────────────────────────────────
+        // 8 questions per course across CSC101, CSC102, CSC201, CSC202,
+        // BUS101, BUS102, EEE101, EEE102
+
+        $bankDefinitions = [
+            'CSC101' => [
+                ['What does CPU stand for?', 'multiple_choice', 2, [
+                    ['Central Processing Unit', true], ['Computer Personal Unit', false],
+                    ['Central Program Utility', false], ['Control Processing User', false],
+                ]],
+                ['Which of the following is an input device?', 'multiple_choice', 2, [
+                    ['Keyboard', true], ['Monitor', false], ['Printer', false], ['Speaker', false],
+                ]],
+                ['What is the binary equivalent of decimal 10?', 'multiple_choice', 2, [
+                    ['1010', true], ['1100', false], ['0101', false], ['1001', false],
+                ]],
+                ['RAM stands for?', 'multiple_choice', 2, [
+                    ['Random Access Memory', true], ['Read Access Memory', false],
+                    ['Rapid Access Module', false], ['Random Application Mode', false],
+                ]],
+                ['Which computer generation used vacuum tubes?', 'multiple_choice', 2, [
+                    ['First generation', true], ['Second generation', false],
+                    ['Third generation', false], ['Fourth generation', false],
+                ]],
+                ['A computer mouse is an example of which type of device?', 'multiple_choice', 2, [
+                    ['Input device', true], ['Output device', false],
+                    ['Storage device', false], ['Processing unit', false],
+                ]],
+                ['The operating system is a type of _____ software.', 'multiple_choice', 2, [
+                    ['System', true], ['Application', false], ['Programming', false], ['Utility', false],
+                ]],
+                ['Which of these is NOT a programming language?', 'multiple_choice', 2, [
+                    ['HTML', true], ['Python', false], ['Java', false], ['C++', false],
+                ]],
+            ],
+            'CSC102' => [
+                ['Which symbol is used for single-line comments in Python?', 'multiple_choice', 2, [
+                    ['#', true], ['//', false], ['--', false], ['/*', false],
+                ]],
+                ['What does the print() function do in Python?', 'multiple_choice', 2, [
+                    ['Displays output to the screen', true], ['Reads input from the user', false],
+                    ['Stores a value in memory', false], ['Loops through a list', false],
+                ]],
+                ['Which data type stores whole numbers in most languages?', 'multiple_choice', 2, [
+                    ['Integer', true], ['Float', false], ['String', false], ['Boolean', false],
+                ]],
+                ['What is the result of 5 % 2 in programming?', 'multiple_choice', 2, [
+                    ['1', true], ['2', false], ['2.5', false], ['0', false],
+                ]],
+                ['A variable is best described as?', 'multiple_choice', 2, [
+                    ['A named storage location in memory', true],
+                    ['A fixed value that cannot change', false],
+                    ['A type of loop', false],
+                    ['An input device', false],
+                ]],
+                ['Which of the following is a loop structure?', 'multiple_choice', 2, [
+                    ['for loop', true], ['if statement', false], ['switch case', false], ['function call', false],
+                ]],
+                ['What keyword is used to define a function in Python?', 'multiple_choice', 2, [
+                    ['def', true], ['func', false], ['function', false], ['define', false],
+                ]],
+                ['An array/list stores?', 'multiple_choice', 2, [
+                    ['Multiple values in a single variable', true],
+                    ['Only one value at a time', false],
+                    ['Only string values', false],
+                    ['Only numeric values', false],
+                ]],
+            ],
+            'CSC201' => [
+                ['Which data structure uses LIFO (Last In, First Out)?', 'multiple_choice', 3, [
+                    ['Stack', true], ['Queue', false], ['Linked List', false], ['Tree', false],
+                ]],
+                ['What is the time complexity of binary search?', 'multiple_choice', 3, [
+                    ['O(log n)', true], ['O(n)', false], ['O(n²)', false], ['O(1)', false],
+                ]],
+                ['A queue follows which principle?', 'multiple_choice', 3, [
+                    ['FIFO — First In, First Out', true], ['LIFO — Last In, First Out', false],
+                    ['Random access', false], ['Priority based', false],
+                ]],
+                ['Which sorting algorithm has the worst-case time complexity of O(n²)?', 'multiple_choice', 3, [
+                    ['Bubble Sort', true], ['Merge Sort', false], ['Heap Sort', false], ['Quick Sort (best)', false],
+                ]],
+                ['In a linked list, each node contains?', 'multiple_choice', 3, [
+                    ['Data and a pointer to the next node', true],
+                    ['Only data', false],
+                    ['Only a pointer', false],
+                    ['An index and data', false],
+                ]],
+                ['Which data structure is used to implement recursion internally?', 'multiple_choice', 3, [
+                    ['Stack', true], ['Queue', false], ['Array', false], ['Hash Table', false],
+                ]],
+                ['What is a binary tree?', 'multiple_choice', 3, [
+                    ['A tree where each node has at most 2 children', true],
+                    ['A tree with exactly 2 levels', false],
+                    ['A tree with only leaf nodes', false],
+                    ['A tree with exactly 2 nodes', false],
+                ]],
+                ['Hash tables provide average-case lookup in?', 'multiple_choice', 3, [
+                    ['O(1)', true], ['O(n)', false], ['O(log n)', false], ['O(n log n)', false],
+                ]],
+            ],
+            'CSC202' => [
+                ['What does SQL stand for?', 'multiple_choice', 2, [
+                    ['Structured Query Language', true], ['Standard Query Language', false],
+                    ['Sequential Query Logic', false], ['Simple Query Lookup', false],
+                ]],
+                ['Which SQL command retrieves data from a table?', 'multiple_choice', 2, [
+                    ['SELECT', true], ['INSERT', false], ['DELETE', false], ['UPDATE', false],
+                ]],
+                ['A primary key in a database must be?', 'multiple_choice', 2, [
+                    ['Unique and not null', true], ['Null and unique', false],
+                    ['Repeated across rows', false], ['A foreign key', false],
+                ]],
+                ['Which normal form eliminates partial dependencies?', 'multiple_choice', 3, [
+                    ['Second Normal Form (2NF)', true], ['First Normal Form (1NF)', false],
+                    ['Third Normal Form (3NF)', false], ['Boyce-Codd Normal Form', false],
+                ]],
+                ['An ER diagram is used to?', 'multiple_choice', 2, [
+                    ['Model relationships between entities', true],
+                    ['Write SQL queries', false],
+                    ['Back up a database', false],
+                    ['Create indexes', false],
+                ]],
+                ['Which SQL clause filters records after grouping?', 'multiple_choice', 3, [
+                    ['HAVING', true], ['WHERE', false], ['ORDER BY', false], ['GROUP BY', false],
+                ]],
+                ['A foreign key is used to?', 'multiple_choice', 2, [
+                    ['Link two tables together', true],
+                    ['Uniquely identify a record', false],
+                    ['Sort query results', false],
+                    ['Create a new table', false],
+                ]],
+                ['Which JOIN returns all records from both tables?', 'multiple_choice', 3, [
+                    ['FULL OUTER JOIN', true], ['INNER JOIN', false], ['LEFT JOIN', false], ['RIGHT JOIN', false],
+                ]],
+            ],
+            'BUS101' => [
+                ['SWOT analysis stands for?', 'multiple_choice', 2, [
+                    ['Strengths, Weaknesses, Opportunities, Threats', true],
+                    ['Sales, Workforce, Operations, Technology', false],
+                    ['Strategy, Work, Output, Tasks', false],
+                    ['Scope, Workload, Objectives, Targets', false],
+                ]],
+                ['Which theory is associated with Frederick Taylor?', 'multiple_choice', 2, [
+                    ['Scientific Management', true], ['Human Relations Theory', false],
+                    ['Systems Theory', false], ['Contingency Theory', false],
+                ]],
+                ['What does ROI stand for in business?', 'multiple_choice', 2, [
+                    ['Return on Investment', true], ['Rate of Inflation', false],
+                    ['Revenue Over Income', false], ['Return on Inventory', false],
+                ]],
+                ['In PEST analysis, what does T stand for?', 'multiple_choice', 2, [
+                    ['Technological', true], ['Trade', false], ['Taxation', false], ['Transaction', false],
+                ]],
+                ['Which is NOT a function of management?', 'multiple_choice', 2, [
+                    ['Manufacturing', true], ['Planning', false], ['Organizing', false], ['Controlling', false],
+                ]],
+                ['The process of setting objectives and determining actions is called?', 'multiple_choice', 2, [
+                    ['Planning', true], ['Organizing', false], ['Leading', false], ['Controlling', false],
+                ]],
+                ['Which management style involves employees in decision-making?', 'multiple_choice', 2, [
+                    ['Democratic / Participative', true], ['Autocratic', false],
+                    ['Laissez-faire', false], ['Bureaucratic', false],
+                ]],
+                ['Span of control refers to?', 'multiple_choice', 2, [
+                    ['The number of subordinates a manager directly supervises', true],
+                    ['The range of products a company sells', false],
+                    ['The budget allocated to a department', false],
+                    ['The number of managers in an organisation', false],
+                ]],
+            ],
+            'BUS102' => [
+                ['Which of the following is a formal written communication?', 'multiple_choice', 2, [
+                    ['Business letter', true], ['Phone call', false], ['Meeting', false], ['Gossip', false],
+                ]],
+                ['Effective communication requires a?', 'multiple_choice', 2, [
+                    ['Sender, message, channel, receiver, and feedback', true],
+                    ['Sender and receiver only', false],
+                    ['Message and channel only', false],
+                    ['Feedback and noise only', false],
+                ]],
+                ['A memo is typically used for?', 'multiple_choice', 2, [
+                    ['Internal communication within an organisation', true],
+                    ['External communication with clients', false],
+                    ['Legal agreements', false],
+                    ['Financial transactions', false],
+                ]],
+                ['Which is an example of non-verbal communication?', 'multiple_choice', 2, [
+                    ['Body language', true], ['Report writing', false], ['Email', false], ['Speech', false],
+                ]],
+                ['The executive summary of a report should appear?', 'multiple_choice', 2, [
+                    ['At the beginning, before the main body', true],
+                    ['At the end of the report', false],
+                    ['In the middle', false],
+                    ['As a footnote', false],
+                ]],
+                ['Noise in communication refers to?', 'multiple_choice', 2, [
+                    ['Any barrier that distorts the message', true],
+                    ['Only sound interference', false],
+                    ['The tone of voice used', false],
+                    ['The length of the message', false],
+                ]],
+                ['Which format is most appropriate for a job application?', 'multiple_choice', 2, [
+                    ['Formal letter', true], ['Text message', false], ['Casual email', false], ['Memo', false],
+                ]],
+                ['Feedback in communication is important because?', 'multiple_choice', 2, [
+                    ['It confirms the message was understood', true],
+                    ['It makes the sender feel good', false],
+                    ['It replaces the need for a message', false],
+                    ['It adds noise to the channel', false],
+                ]],
+            ],
+            'EEE101' => [
+                ["What is Ohm's Law?", 'multiple_choice', 3, [
+                    ['V = IR', true], ['V = I + R', false], ['V = I / R', false], ['V = I² × R', false],
+                ]],
+                ['The SI unit of electrical resistance is?', 'multiple_choice', 2, [
+                    ['Ohm (Ω)', true], ['Volt (V)', false], ['Ampere (A)', false], ['Watt (W)', false],
+                ]],
+                ['In a series circuit, which quantity is the same throughout?', 'multiple_choice', 3, [
+                    ['Current', true], ['Voltage', false], ['Resistance', false], ['Power', false],
+                ]],
+                ['The unit of capacitance is?', 'multiple_choice', 2, [
+                    ['Farad (F)', true], ['Henry (H)', false], ['Joule (J)', false], ['Tesla (T)', false],
+                ]],
+                ['KVL states the algebraic sum of voltages in a closed loop is?', 'multiple_choice', 3, [
+                    ['Zero', true], ['Equal to source voltage', false], ['Maximum', false], ['Infinite', false],
+                ]],
+                ['KCL states the sum of currents entering a node is?', 'multiple_choice', 3, [
+                    ['Equal to the sum of currents leaving it', true],
+                    ['Always zero', false],
+                    ['Greater than currents leaving', false],
+                    ['Less than currents leaving', false],
+                ]],
+                ['The power dissipated in a resistor is given by?', 'multiple_choice', 3, [
+                    ['P = I²R', true], ['P = IR', false], ['P = V/I', false], ['P = R/V', false],
+                ]],
+                ['In a parallel circuit, which quantity is the same across all branches?', 'multiple_choice', 3, [
+                    ['Voltage', true], ['Current', false], ['Resistance', false], ['Power', false],
+                ]],
+            ],
+            'EEE102' => [
+                ['A diode allows current to flow in?', 'multiple_choice', 2, [
+                    ['One direction only', true], ['Both directions', false],
+                    ['No direction', false], ['Alternating directions', false],
+                ]],
+                ['The transistor is primarily used as?', 'multiple_choice', 2, [
+                    ['An amplifier or switch', true], ['A power source', false],
+                    ['A resistor', false], ['A transformer', false],
+                ]],
+                ['The p-n junction is found in?', 'multiple_choice', 2, [
+                    ['Diodes and transistors', true], ['Resistors', false],
+                    ['Capacitors', false], ['Inductors', false],
+                ]],
+                ['What does an oscilloscope measure?', 'multiple_choice', 2, [
+                    ['Voltage waveforms over time', true],
+                    ['Resistance', false],
+                    ['Current only', false],
+                    ['Frequency only', false],
+                ]],
+                ['In forward bias, the p-n junction?', 'multiple_choice', 2, [
+                    ['Conducts current', true], ['Blocks current', false],
+                    ['Acts as a capacitor', false], ['Acts as an inductor', false],
+                ]],
+                ['The unit of frequency is?', 'multiple_choice', 2, [
+                    ['Hertz (Hz)', true], ['Farad (F)', false], ['Ohm (Ω)', false], ['Watt (W)', false],
+                ]],
+                ['An NPN transistor has?', 'multiple_choice', 2, [
+                    ['Two N-type and one P-type semiconductor', true],
+                    ['Two P-type and one N-type semiconductor', false],
+                    ['Only N-type semiconductors', false],
+                    ['Only P-type semiconductors', false],
+                ]],
+                ['The process of converting AC to DC is called?', 'multiple_choice', 2, [
+                    ['Rectification', true], ['Amplification', false], ['Modulation', false], ['Inversion', false],
+                ]],
+            ],
+        ];
+
+        $adminUser = User::where('school_id', $school->id)
+            ->where('role', User::ROLE_STAFF)
+            ->first();
+
+        foreach ($bankDefinitions as $courseCode => $questions) {
+            $course = $courses[$courseCode];
+            foreach ($questions as $qIdx => [$qText, $qType, $marks, $options]) {
+                $bankItem = QuestionBankItem::updateOrCreate(
+                    [
+                        'school_id'  => $school->id,
+                        'course_id'  => $course->id,
+                        'sort_order' => $qIdx + 1,
+                    ],
+                    [
+                        'created_by'    => $adminUser?->id,
+                        'question_text' => $qText,
+                        'question_type' => $qType,
+                        'marks'         => $marks,
+                    ],
+                );
+
+                foreach ($options as $oIdx => [$text, $isCorrect]) {
+                    QuestionBankItemOption::updateOrCreate(
+                        [
+                            'question_id' => $bankItem->id,
+                            'sort_order'  => $oIdx + 1,
+                        ],
+                        [
+                            'school_id'   => $school->id,
+                            'option_text' => $text,
+                            'is_correct'  => $isCorrect,
+                        ],
+                    );
+                }
             }
         }
 
