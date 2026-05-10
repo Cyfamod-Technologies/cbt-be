@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Assessment;
-use App\Models\SchoolSetting;
 use App\Models\StudentCourseEnrollment;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -35,7 +34,6 @@ class AssessmentController extends Controller
     public function available(Request $request): JsonResponse
     {
         $student = $this->requireStudent($request);
-        $schoolSetting = SchoolSetting::where('school_id', $student->school_id)->first();
         $now = Carbon::now();
         $enrolledCourseIds = StudentCourseEnrollment::query()
             ->where('school_id', $student->school_id)
@@ -65,14 +63,6 @@ class AssessmentController extends Controller
                     $builder->orWhereIn('course_id', $enrolledCourseIds);
                 }
             });
-
-        if ($schoolSetting?->current_session_id) {
-            $query->where('session_id', $schoolSetting->current_session_id);
-        }
-
-        if ($schoolSetting?->current_semester_id) {
-            $query->where('semester_id', $schoolSetting->current_semester_id);
-        }
 
         return response()->json(['data' => $query->latest('id')->get()]);
     }
