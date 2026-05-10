@@ -19,7 +19,7 @@ class CurrentUserController extends Controller
 
         $user->loadMissing('school');
 
-        if ($user->role === User::ROLE_STUDENT) {
+        if (in_array($user->role, [User::ROLE_STUDENT, User::ROLE_STAFF], true)) {
             $user->loadMissing(['department', 'level']);
         }
 

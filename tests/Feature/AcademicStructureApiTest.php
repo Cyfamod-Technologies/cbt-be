@@ -2,7 +2,15 @@
 
 namespace Tests\Feature;
 
+use App\Models\AcademicSession;
+use App\Models\Assessment;
+use App\Models\Course;
+use App\Models\Department;
+use App\Models\Level;
 use App\Models\School;
+use App\Models\SchoolSetting;
+use App\Models\Semester;
+use App\Models\StudentCourseEnrollment;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -149,6 +157,106 @@ class AcademicStructureApiTest extends TestCase
 
         $this->postJson('/api/v1/levels', ['name' => 'ND I'])
             ->assertForbidden();
+    }
+
+    public function test_student_can_view_assessment_for_enrolled_course(): void
+    {
+        $school = School::create([
+            'name' => 'Test School',
+            'code' => 'TEST'.fake()->unique()->numberBetween(100, 999),
+        ]);
+
+        $session = AcademicSession::create([
+            'school_id' => $school->id,
+            'name' => '2025/2026',
+        ]);
+
+        $semester = Semester::create([
+            'school_id' => $school->id,
+            'session_id' => $session->id,
+            'name' => 'First Semester',
+        ]);
+
+        SchoolSetting::create([
+            'school_id' => $school->id,
+            'current_session_id' => $session->id,
+            'current_semester_id' => $semester->id,
+        ]);
+
+        $studentDepartment = Department::create([
+            'school_id' => $school->id,
+            'name' => 'Electrical Engineering',
+            'code' => 'EEE',
+        ]);
+
+        $studentLevel = Level::create([
+            'school_id' => $school->id,
+            'name' => 'ND II',
+        ]);
+
+        $student = User::create([
+            'school_id' => $school->id,
+            'name' => 'Course Student',
+            'email' => 'student@school.test',
+            'password' => Hash::make('password'),
+            'role' => User::ROLE_STUDENT,
+            'status' => User::STATUS_ACTIVE,
+            'department_id' => $studentDepartment->id,
+            'level_id' => $studentLevel->id,
+        ]);
+
+        $courseDepartment = Department::create([
+            'school_id' => $school->id,
+            'name' => 'Computer Science',
+            'code' => 'CSC',
+        ]);
+
+        $courseLevel = Level::create([
+            'school_id' => $school->id,
+            'name' => 'ND I',
+        ]);
+
+        $course = Course::create([
+            'school_id' => $school->id,
+            'department_id' => $courseDepartment->id,
+            'level_id' => $courseLevel->id,
+            'semester_id' => $semester->id,
+            'code' => 'CSC111',
+            'title' => 'Introduction to Computing',
+        ]);
+
+        StudentCourseEnrollment::create([
+            'school_id' => $school->id,
+            'student_id' => $student->id,
+            'course_id' => $course->id,
+            'type' => 'carryover',
+        ]);
+
+        $assessment = Assessment::create([
+            'school_id' => $school->id,
+            'created_by' => $student->id,
+            'session_id' => $session->id,
+            'semester_id' => $semester->id,
+            'department_id' => $courseDepartment->id,
+            'level_id' => $courseLevel->id,
+            'course_id' => $course->id,
+            'code' => 'CSC111-TEST-1',
+            'title' => 'Intro to Computing Test',
+            'duration_minutes' => 30,
+            'total_questions' => 0,
+            'total_marks' => 0,
+            'pass_mark' => 0,
+            'start_time' => now()->subHour(),
+            'end_time' => now()->addHour(),
+            'status' => Assessment::STATUS_PUBLISHED,
+        ]);
+
+        Sanctum::actingAs($student, ['exams:take']);
+
+        $this->getJson('/api/v1/assessments/available')
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $assessment->id)
+            ->assertJsonPath('data.0.course.id', $course->id);
     }
 
     private function adminUser(string $code = 'TEST'): User

@@ -203,10 +203,11 @@ class UserController extends Controller
                 Rule::unique('users', 'email')->where('school_id', $actor->school_id)->ignore($user->id),
             ],
             'phone' => ['sometimes', 'nullable', 'string', 'max:80'],
-            'password' => ['sometimes', 'nullable', 'string', 'min:8', 'max:255'],
+            'password' => ['sometimes', 'nullable', 'string', 'min:6', 'max:255'],
             'photo' => ['sometimes', 'nullable', 'image', 'max:2048'],
             'role' => ['sometimes', Rule::in([User::ROLE_STAFF, User::ROLE_STUDENT])],
             'status' => ['sometimes', Rule::in([User::STATUS_ACTIVE, User::STATUS_INACTIVE])],
+            'force_password_change' => ['sometimes', 'boolean'],
         ]);
 
         if (array_key_exists('full_name', $validated)) {

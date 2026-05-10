@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\V1\StudentCourseEnrollmentController;
 use App\Http\Controllers\Api\V1\QuestionBankController;
 use App\Http\Controllers\Api\V1\StaffPermissionController;
 use App\Http\Controllers\Api\V1\UserController;
+use App\Http\Controllers\Api\V1\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('api.v1.')->group(function (): void {
@@ -30,6 +31,7 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
 
     Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('me', CurrentUserController::class)->name('me');
+        Route::put('me', [ProfileController::class, 'update'])->name('me.update');
         Route::post('auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
         Route::post('auth/student-change-password', [AuthController::class, 'studentChangePassword'])->name('auth.student-change-password');
 

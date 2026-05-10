@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Assessment;
 use App\Models\SchoolSetting;
+use App\Models\StudentCourseEnrollment;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -36,6 +37,10 @@ class AssessmentController extends Controller
         $student = $this->requireStudent($request);
         $schoolSetting = SchoolSetting::where('school_id', $student->school_id)->first();
         $now = Carbon::now();
+        $enrolledCourseIds = StudentCourseEnrollment::query()
+            ->where('school_id', $student->school_id)
+            ->where('student_id', $student->id)
+            ->pluck('course_id');
 
         $query = Assessment::with(['session', 'semester', 'department', 'level', 'course'])
             ->withCount(['questions', 'attempts'])
@@ -47,7 +52,19 @@ class AssessmentController extends Controller
             ->where(function ($builder) use ($now): void {
                 $builder->whereNull('end_time')->orWhere('end_time', '>=', $now);
             })
-            ->where('department_id', $student->department_id);
+            ->where(function ($builder) use ($student, $enrolledCourseIds): void {
+                $builder->where('department_id', $student->department_id);
+
+                if ($student->level_id) {
+                    $builder->where(function ($levelBuilder) use ($student): void {
+                        $levelBuilder->whereNull('level_id')->orWhere('level_id', $student->level_id);
+                    });
+                }
+
+                if ($enrolledCourseIds->isNotEmpty()) {
+                    $builder->orWhereIn('course_id', $enrolledCourseIds);
+                }
+            });
 
         if ($schoolSetting?->current_session_id) {
             $query->where('session_id', $schoolSetting->current_session_id);
@@ -55,12 +72,6 @@ class AssessmentController extends Controller
 
         if ($schoolSetting?->current_semester_id) {
             $query->where('semester_id', $schoolSetting->current_semester_id);
-        }
-
-        if ($student->level_id) {
-            $query->where(function ($builder) use ($student): void {
-                $builder->whereNull('level_id')->orWhere('level_id', $student->level_id);
-            });
         }
 
         return response()->json(['data' => $query->latest('id')->get()]);
